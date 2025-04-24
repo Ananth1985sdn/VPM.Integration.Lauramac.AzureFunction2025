@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Newtonsoft.Json;
+using VPM.Integration.Lauramac.AzureFunction.Interface;
 
 namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 {
