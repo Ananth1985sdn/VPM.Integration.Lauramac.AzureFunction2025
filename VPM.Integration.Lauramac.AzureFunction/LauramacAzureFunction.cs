@@ -1,7 +1,3 @@
-using System;
-using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.AspNetCore.Mvc.Filters;
-using System.Reflection;
 using System.Text;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
