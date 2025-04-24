@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "VPM.Integration.Lauramac.AzureFunction": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7078"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "containerRunArguments": "--init",
+      "httpPort": 33749,
+      "useSSL": false
+    }
+  }
+}
