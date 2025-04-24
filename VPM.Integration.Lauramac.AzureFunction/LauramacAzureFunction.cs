@@ -58,159 +58,170 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
         public async Task<string> GetEncompassAccessTokenAsync(ILogger log)
         {
-            var encompassBaseURL = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
-            var tokenUrl = Environment.GetEnvironmentVariable("EncompassTokenUrl");
+            var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
+            var tokenEndpoint = Environment.GetEnvironmentVariable("EncompassTokenUrl");
 
             var credentials = new EncompassCredentials();
-            var clientId = credentials.ClientId;
-            var clientSecret = credentials.ClientSecret;
-            var username = credentials.Username;
-            var password = credentials.Password;
 
-            var fullUrl = $"{encompassBaseURL.TrimEnd('/')}{tokenUrl}";
+            var fullUrl = $"{baseUrl?.TrimEnd('/')}{tokenEndpoint}";
 
-            string token = await _loanDataService.GetToken(username, password, clientId, clientSecret, fullUrl);
+            var token = await _loanDataService.GetToken(
+                credentials.Username,
+                credentials.Password,
+                credentials.ClientId,
+                credentials.ClientSecret,
+                fullUrl
+            );
+
             return token;
         }
 
+
         private async Task CallLoanPipelineApiAsync(string token)
         {
-            var encompassBaseURL = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
-            var pipeLineUrl = Environment.GetEnvironmentVariable("EncompassLoanPipelineURL");
-            var requestUrl = $"{encompassBaseURL.TrimEnd('/')}{pipeLineUrl}";
+            var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
+            var pipelineUrl = Environment.GetEnvironmentVariable("EncompassLoanPipelineURL");
             var documentPackage = Environment.GetEnvironmentVariable("DocumentPackageName");
 
+            var requestUrl = $"{baseUrl?.TrimEnd('/')}{pipelineUrl}";
             var requestBody = RequestBody();
-
             var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _loanDataService.GetLoanData(requestUrl, content, token);
-            _logger.LogInformation("Loan Pipeline Response: " + response);
+            _logger.LogInformation("Loan Pipeline Response: {Response}", response);
 
-            if (response != null && response != "[]")
-            {
-                try
-                {
-                    var parsedJson = JToken.Parse(response);
-                }
-                catch (Newtonsoft.Json.JsonReaderException ex)
-                {
-                    _logger.LogInformation("Invalid JSON in Loan Pipeline Response: {Response}. Error: {ErrorMessage}", response, ex.Message);
-                    return;
-                }
-                try
-                {
-                    var loans = JsonConvert.DeserializeObject<List<EncompassLoan>>(response);
-                    _logger.LogInformation($"Number of Loans: {loans.Count}");
-
-                    var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
-                    var endpointTemplate = Environment.GetEnvironmentVariable("EncompassGetDocumentsURL");
-
-                    LoanRequest loanRequest = new LoanRequest();
-                    loanRequest.Loans = new List<LauramacLoan>();
-                    string sellerName = string.Empty;
-
-                    foreach (var loan in loans)
-                    {
-                        sellerName = string.IsNullOrEmpty(sellerName) ? loan.Fields.FieldsCXNAME_DDPROVIDER : sellerName;
-                        _logger.LogInformation($"Loan ID: {loan.LoanId}, Loan Number: {loan.Fields.LoanNumber}, Amount: {loan.Fields.LoanAmount}");
-
-                        var documentsResponse = await _loanDataService.GetAllLoanDocuments(token, loan.LoanId);
-
-                        try
-                        {
-                            var parsedJson = JToken.Parse(documentsResponse);
-                        }
-                        catch (Newtonsoft.Json.JsonReaderException ex)
-                        {
-                            _logger.LogInformation("Invalid JSON in Loan Documents Response: {Response}. Error: {ErrorMessage}", documentsResponse, ex.Message);
-                            continue;
-                        }
-
-                        _logger.LogInformation($"Attachments for Loan {loan.Fields.LoanNumber}: {documentsResponse}");
-
-                        List<Attachment> attachments = new();
-
-                        if (documentsResponse != null && documentsResponse != "[]")
-                        {
-                            try
-                            {
-                                attachments = JsonConvert.DeserializeObject<List<Attachment>>(documentsResponse) ?? new List<Attachment>();
-                            }
-                            catch (Newtonsoft.Json.JsonException ex)
-                            {
-                                _logger.LogError($"Error deserializing response: {ex.Message}");
-                            }
-
-                            foreach (var attachment in attachments ?? Enumerable.Empty<Attachment>())
-                            {
-                                if (attachment.AssignedTo?.EntityName != documentPackage || (attachment.FileSize <= 0 || attachment.Type != "Image"))
-                                    continue;
-                                else
-                                {
-                                    _logger.LogInformation($"Attachment Title: {attachment.Title}, CreatedBy: {attachment.AssignedTo?.EntityName}, File Size: {attachment.FileSize}");
-                                    loan.LoanId = "66b6fc88-f675-4cdd-b78a-214453cde1e9";
-                                    attachment.Id = "eb00e165-4ce6-4580-a39a-555067afdaca";
-                                    var url = await _loanDataService.GetDocumentUrl(loan.LoanId, attachment.Id, token);
-                                    if (url != null)
-                                    {
-                                        var documentDownload = await _loanDataService.DownloadDocument(loan.LoanId, loan.Fields.Field4002, url);
-                                        if (documentDownload)
-                                        {
-                                            var lauramacLoan = new Models.Lauramac.Request.Loan
-                                            {
-                                                LoanID = loan.LoanId,
-                                                LoanNumber = loan.Fields.LoanNumber,
-                                                LoanAmount = loan.Fields.LoanAmount,
-                                                NoteRate = loan.Fields.Field3,
-                                                LoanTerm = loan.Fields.Field325,
-                                                Purpose = loan.Fields.Field19,
-                                                Fico = loan.Fields.CreditScore,
-                                                OriginalLTV = loan.Fields.LTV,
-                                                OriginalCLTV = loan.Fields.Field976,
-                                                AppraisedValue = loan.Fields.Field356,
-                                                PurchasePrice = loan.Fields.FieldsCXPURCHASEPRICE,
-                                                DocType = loan.Fields.DocType,
-                                                AmortizationType = loan.Fields.Field608,
-                                                PropType = loan.Fields.Field1401,
-                                                Occupancy = loan.Fields.OccupancyStatus,
-
-                                                // Borrower Info
-                                                BorrowerFirstName = loan.Fields.Field4000,
-                                                BorrowerLastName = loan.Fields.Field4002,
-                                                BorrowerSSN = loan.Fields.Field65,
-
-                                                // Property Info
-                                                Address = loan.Fields.Address1,
-                                                City = loan.Fields.City,
-                                                State = loan.Fields.State,
-                                                Zip = loan.Fields.Field15
-                                            };
-
-                                            loanRequest.Loans.Add(lauramacLoan);
-                                            break;
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    loanRequest.TransactionIdentifier = "VPM WHSL_2025-02-VPM";
-                    loanRequest.SellerName = sellerName;
-                    loanRequest.OverrideDuplicateLoans = "0";
-                }
-                catch (Newtonsoft.Json.JsonException ex)
-                {
-                    _logger.LogError($"Error deserializing response: {ex.Message}");
-                }
-            }
-            else
+            if (string.IsNullOrWhiteSpace(response) || response == "[]")
             {
                 _logger.LogInformation("No loans match the given criteria.");
+                return;
+            }
+
+            try
+            {
+                _ = JToken.Parse(response); // Validate JSON
+
+                var loans = JsonConvert.DeserializeObject<List<EncompassLoan>>(response);
+                _logger.LogInformation("Number of Loans: {LoanCount}", loans?.Count ?? 0);
+
+                var endpointTemplate = Environment.GetEnvironmentVariable("EncompassGetDocumentsURL");
+
+                var loanRequest = new LoanRequest
+                {
+                    Loans = new List<LauramacLoan>(),
+                    TransactionIdentifier = "VPM WHSL_2025-02-VPM",
+                    OverrideDuplicateLoans = "0"
+                };
+
+                string sellerName = string.Empty;
+
+                foreach (var loan in loans ?? Enumerable.Empty<EncompassLoan>())
+                {
+                    sellerName = string.IsNullOrEmpty(sellerName)
+                        ? loan.Fields.FieldsCXNAME_DDPROVIDER
+                        : sellerName;
+
+                    _logger.LogInformation(
+                        "Loan ID: {LoanId}, Loan Number: {LoanNumber}, Amount: {LoanAmount}",
+                        loan.LoanId, loan.Fields.LoanNumber, loan.Fields.LoanAmount);
+
+                    var documentsResponse = await _loanDataService.GetAllLoanDocuments(token, loan.LoanId);
+
+                    try
+                    {
+                        _ = JToken.Parse(documentsResponse); // Validate JSON
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        _logger.LogInformation(
+                            "Invalid JSON in Loan Documents Response: {Response}. Error: {ErrorMessage}",
+                            documentsResponse, ex.Message);
+                        continue;
+                    }
+
+                    _logger.LogInformation(
+                        "Attachments for Loan {LoanNumber}: {Attachments}",
+                        loan.Fields.LoanNumber, documentsResponse);
+
+                    if (string.IsNullOrWhiteSpace(documentsResponse) || documentsResponse == "[]")
+                        continue;
+
+                    List<Attachment> attachments;
+                    try
+                    {
+                        attachments = JsonConvert.DeserializeObject<List<Attachment>>(documentsResponse)
+                                      ?? new List<Attachment>();
+                    }
+                    catch (JsonException ex)
+                    {
+                        _logger.LogError("Error deserializing attachments: {Message}", ex.Message);
+                        continue;
+                    }
+
+                    foreach (var attachment in attachments)
+                    {
+                        if (attachment.AssignedTo?.EntityName != documentPackage ||
+                            attachment.FileSize <= 0 ||
+                            attachment.Type != "Image")
+                            continue;
+
+                        _logger.LogInformation(
+                            "Attachment Title: {Title}, CreatedBy: {CreatedBy}, File Size: {Size}",
+                            attachment.Title, attachment.AssignedTo?.EntityName, attachment.FileSize);
+
+                        // TEMP: Overriding for testing/demo
+                        loan.LoanId = "66b6fc88-f675-4cdd-b78a-214453cde1e9";
+                        attachment.Id = "eb00e165-4ce6-4580-a39a-555067afdaca";
+
+                        var url = await _loanDataService.GetDocumentUrl(loan.LoanId, attachment.Id, token);
+                        if (url == null) continue;
+
+                        var documentDownloaded = await _loanDataService.DownloadDocument(
+                            loan.LoanId, loan.Fields.Field4002, url);
+
+                        if (!documentDownloaded) continue;
+
+                        var lauramacLoan = new Models.Lauramac.Request.Loan
+                        {
+                            LoanID = loan.LoanId,
+                            LoanNumber = loan.Fields.LoanNumber,
+                            LoanAmount = loan.Fields.LoanAmount,
+                            NoteRate = loan.Fields.Field3,
+                            LoanTerm = loan.Fields.Field325,
+                            Purpose = loan.Fields.Field19,
+                            Fico = loan.Fields.CreditScore,
+                            OriginalLTV = loan.Fields.LTV,
+                            OriginalCLTV = loan.Fields.Field976,
+                            AppraisedValue = loan.Fields.Field356,
+                            PurchasePrice = loan.Fields.FieldsCXPURCHASEPRICE,
+                            DocType = loan.Fields.DocType,
+                            AmortizationType = loan.Fields.Field608,
+                            PropType = loan.Fields.Field1401,
+                            Occupancy = loan.Fields.OccupancyStatus,
+
+                            BorrowerFirstName = loan.Fields.Field4000,
+                            BorrowerLastName = loan.Fields.Field4002,
+                            BorrowerSSN = loan.Fields.Field65,
+
+                            Address = loan.Fields.Address1,
+                            City = loan.Fields.City,
+                            State = loan.Fields.State,
+                            Zip = loan.Fields.Field15
+                        };
+
+                        loanRequest.Loans.Add(lauramacLoan);
+                        break; // break after first matching attachment
+                    }
+                }
+
+                loanRequest.SellerName = sellerName;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError("Error deserializing loan pipeline response: {Message}", ex.Message);
             }
         }
+
 
         private static Object RequestBody()
         {
