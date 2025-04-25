@@ -29,7 +29,6 @@ namespace VPM.Integration.Lauramac.AzureFunction
         {
             try
             {
-                // Your function logic here
                 _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
                 string token = await GetEncompassAccessTokenAsync(_logger);
 
@@ -95,7 +94,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
             try
             {
-                _ = JToken.Parse(response); // Validate JSON
+                _ = JToken.Parse(response); 
 
                 var loans = JsonConvert.DeserializeObject<List<EncompassLoan>>(response);
                 _logger.LogInformation("Number of Loans: {LoanCount}", loans?.Count ?? 0);
@@ -182,7 +181,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
                         if (string.IsNullOrWhiteSpace(url) && !Uri.IsWellFormedUriString(url, UriKind.Absolute))
                         {
-                        continue;
+                            continue;
                         }
 
                         var documentDownloaded = await _loanDataService.DownloadDocument(

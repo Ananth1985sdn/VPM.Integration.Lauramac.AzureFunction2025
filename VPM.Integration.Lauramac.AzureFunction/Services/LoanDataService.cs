@@ -34,7 +34,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"HTTP {response.StatusCode}: {errorContent}");
+                _logger.LogError("Error response received: {ErrorContent}", errorContent);
+                return $"Error: {response.StatusCode}, Content: {errorContent}";
             }
             catch (Exception ex)
             {
@@ -140,7 +141,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    throw new Exception($"Failed to get document URL. Status: {response.StatusCode}, Response: {error}");
+                    _logger.LogError("Error response received: {ErrorContent}", error);
+                    return $"Error: {response.StatusCode}, Content: {error}";
                 }
 
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
