@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Azure;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -101,12 +102,13 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Error: {response.StatusCode}, Content: {errorContent}");
+                _logger.LogError("Error response received: {ErrorContent}", errorContent);
+                return $"Error: {response.StatusCode}, Content: {errorContent}";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting loan documents from {Url}", fullUrl);
-                return null;
+                return $"Error while getting loan documents {fullUrl}";
             }
         }
 
@@ -146,7 +148,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
                 if (responseObject?.AttachmentUrls == null || responseObject.AttachmentUrls.Count == 0)
                 {
-                    throw new Exception("No attachments found in the response.");
+                    _logger.LogWarning("No attachments found in the response");
+                    return null;
                 }
 
                 var attachment = responseObject.AttachmentUrls[0];
@@ -154,9 +157,12 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
                 if (pages != null && pages.Count > 0)
                 {
-                    return pages.Count == 1
-                        ? pages[0].Url
-                        : attachment.originalUrls?.FirstOrDefault() ?? pages.FirstOrDefault()?.Url;
+                    return attachment.originalUrls?.FirstOrDefault(); 
+                }
+                else
+                {
+                    _logger.LogWarning("No pages found in the attachment");
+                    return null;
                 }
             }
             catch (Exception ex)

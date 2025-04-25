@@ -179,7 +179,11 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         attachment.Id = "eb00e165-4ce6-4580-a39a-555067afdaca";
 
                         var url = await _loanDataService.GetDocumentUrl(loan.LoanId, attachment.Id, token);
-                        if (url == null) continue;
+
+                        if (string.IsNullOrWhiteSpace(url) && !Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                        {
+                        continue;
+                        }
 
                         var documentDownloaded = await _loanDataService.DownloadDocument(
                             loan.LoanId, loan.Fields.Field4002, url);
@@ -221,10 +225,10 @@ namespace VPM.Integration.Lauramac.AzureFunction
                             Filename = $"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
                             isExternalDocument = false,
                             ExternalDocumentLink = null,
-                            ExternalFileId=null,
-                            ExternalRequestId= null
+                            ExternalFileId = null,
+                            ExternalRequestId = null
                         });
-                        break; 
+                        break;
                     }
                 }
 
