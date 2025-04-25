@@ -1,19 +1,13 @@
-﻿using Azure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Moq.Protected;
 using Newtonsoft.Json;
-using System.Net;
 using System.Text;
 using VPM.Integration.Lauramac.AzureFunction.Interface;
 using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Request;
-using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response;
-using VPM.Integration.Lauramac.AzureFunction.Services;
 
 namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 {
-    public class LauramacAzureFunction_Test
+    public class LauramacAzureFunction_MoqTest
     {
         [Fact]
         public async Task TestGetToken_ExtractsAccessTokenCorrectly()
@@ -170,60 +164,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             Assert.Equal(loanResponse.Count,0);
         }
 
-        [Fact]
-        public async Task TestGetLoanData_MockVsIntegration_ShouldMatch()
-        {
-            // Arrange: environment setup
-            Environment.SetEnvironmentVariable("EncompassPipelineUrl", "https://api.elliemae.com/encompass/v3/loanPipeline");
-            Environment.SetEnvironmentVariable("EncompassAuthToken", "0004R2RHhOxb7g64wHTgFwmNbOgv");
-
-            Environment.SetEnvironmentVariable("EncompassUsername", "gananth@encompass:TEBE11212117");
-            Environment.SetEnvironmentVariable("EncompassPassword", "Welcome@123");
-            Environment.SetEnvironmentVariable("EncompassClientId", "2n4b1uv");
-            Environment.SetEnvironmentVariable("EncompassClientSecret", "*GjzokQW3Gw9bQtVQ#B5n$EHyi5yHW&jVIbTS0Ql7M7C38CHDcccm4icw56uAa0h");
-
-            var userName = Environment.GetEnvironmentVariable("EncompassUsername");
-            var password = Environment.GetEnvironmentVariable("EncompassPassword");
-            var clientId = Environment.GetEnvironmentVariable("EncompassClientId");
-            var clientSecret = Environment.GetEnvironmentVariable("EncompassClientSecret");
-
-
-            var encompassPipelineUrl = Environment.GetEnvironmentVariable("EncompassPipelineUrl");
-            var encompassAuthToken = Environment.GetEnvironmentVariable("EncompassAuthToken");
-            var tokenUrl = "https://api.elliemae.com/oauth2/v1/token";
-            var requestBody = RequestBody();
-            var json = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            // 🔹 Integration: use real HttpClient + service
-            var loggerMock = new Mock<ILogger<LoanDataService>>();
-            var httpClient = new HttpClient(); // NOTE: this will hit the real API
-            var realService = new LoanDataService(loggerMock.Object, httpClient);
-            
-            var accessToken = await realService.GetToken(userName, password, clientId, clientSecret, tokenUrl);
-            
-            var realResult = await realService.GetLoanData(encompassPipelineUrl, content, accessToken);
-            var realLoanResponse = JsonConvert.DeserializeObject<List<Loan>>(realResult);
-
-            // 🔹 Mock: return expected JSON from file
-            var expectedContent = await File.ReadAllTextAsync(@"TestData/SuccessLoanData.json", Encoding.UTF8);
-            var loanDataServiceMock = new Mock<ILoanDataService>();
-
-            loanDataServiceMock
-                .Setup(s => s.GetLoanData(
-                    It.IsAny<string>(),
-                    It.IsAny<StringContent>(),
-                    It.IsAny<string>()))
-                .ReturnsAsync(expectedContent);
-
-            var mockService = loanDataServiceMock.Object;
-            var mockResult = await mockService.GetLoanData(encompassPipelineUrl, content, encompassAuthToken);
-            var mockLoanResponse = JsonConvert.DeserializeObject<List<Loan>>(mockResult);
-
-            // Assert: compare mock vs real
-            Assert.Equal(mockLoanResponse.Count, realLoanResponse.Count);
-            Assert.Equal(mockLoanResponse[0].LoanId, realLoanResponse[0].LoanId);
-        }
+        
 
         private static Object RequestBody()
         {
