@@ -10,7 +10,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
     public class LauramacAzureFunction_MoqTest
     {
         [Fact]
-        public async Task TestGetToken_ExtractsAccessTokenCorrectly()
+        public async Task TestCase_GetAccessTokenWithValidCred()
         {
             Environment.SetEnvironmentVariable("EncompassUsername", "gananth@encompass:TEBE11212117");
             Environment.SetEnvironmentVariable("EncompassPassword", "Welcome@123");
@@ -53,7 +53,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         }
 
         [Fact]
-        public async Task Test_InvalidPassword()
+        public async Task TestCase_InvalidUsernameOrPassword()
         {
             Environment.SetEnvironmentVariable("EncompassUsername", "gananth@encompass:TEBE11212117");
             Environment.SetEnvironmentVariable("EncompassPassword", "Welcome@1234");
@@ -96,7 +96,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         }
 
         [Fact]
-        public async Task TestGetLoanData_Success()
+        public async Task TestCase_Get_Valid_LoanData()
         {
             Environment.SetEnvironmentVariable("EncompassPipelineUrl", "https://api.elliemae.com/encompass/v3/loanPipeline");
             Environment.SetEnvironmentVariable("EncompassAuthToken", "0004R2RHhOxb7g64wHTgFwmNbOgv");
@@ -131,7 +131,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         }
         
         [Fact]
-        public async Task TestGetLoanData_Failure()
+        public async Task TestCase_Get_Empty_LoanData()
         {
             Environment.SetEnvironmentVariable("EncompassPipelineUrl", "https://api.elliemae.com/encompass/v3/loanPipeline");
             Environment.SetEnvironmentVariable("EncompassAuthToken", "0004R2RHhOxb7g64wHTgFwmNbOgv");
