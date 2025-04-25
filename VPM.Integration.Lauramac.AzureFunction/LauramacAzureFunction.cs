@@ -112,6 +112,12 @@ namespace VPM.Integration.Lauramac.AzureFunction
                     OverrideDuplicateLoans = "0"
                 };
 
+                var loanDoumentRequest = new LoanDocumentRequest
+                {
+                    LoanDocuments = new List<LoanDocument>(),
+                    TransactionIdentifier = transactionIdentifier,
+                };
+
                 string sellerName = string.Empty;
 
                 foreach (var loan in loans ?? Enumerable.Empty<EncompassLoan>())
@@ -209,11 +215,21 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         };
 
                         loanRequest.Loans.Add(lauramacLoan);
-                        break; // break after first matching attachment
+                        loanDoumentRequest.LoanDocuments.Add(new LoanDocument
+                        {
+                            LoanID = loan.LoanId,
+                            Filename = $"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                            isExternalDocument = false,
+                            ExternalDocumentLink = null,
+                            ExternalFileId=null,
+                            ExternalRequestId= null
+                        });
+                        break; 
                     }
                 }
 
                 loanRequest.SellerName = sellerName;
+                loanDoumentRequest.SellerName = sellerName;
             }
             catch (JsonException ex)
             {
