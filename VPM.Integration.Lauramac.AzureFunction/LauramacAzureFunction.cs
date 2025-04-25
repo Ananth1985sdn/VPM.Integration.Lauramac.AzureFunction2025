@@ -101,11 +101,14 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 _logger.LogInformation("Number of Loans: {LoanCount}", loans?.Count ?? 0);
 
                 var endpointTemplate = Environment.GetEnvironmentVariable("EncompassGetDocumentsURL");
-
+                var canopyTransactionIdentifier = Environment.GetEnvironmentVariable("CanopyTransactionIdentifier");
+                DateTime currentDateTime = DateTime.Now;
+                string transactionId = currentDateTime.ToString("yyyy-MM");
+                var transactionIdentifier = canopyTransactionIdentifier.Replace("{transactionId}", transactionId);
                 var loanRequest = new LoanRequest
                 {
                     Loans = new List<LauramacLoan>(),
-                    TransactionIdentifier = "VPM WHSL_2025-02-VPM",
+                    TransactionIdentifier = transactionIdentifier,
                     OverrideDuplicateLoans = "0"
                 };
 

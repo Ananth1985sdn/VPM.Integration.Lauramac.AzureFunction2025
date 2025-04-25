@@ -18,6 +18,7 @@
     "LauraMacBaseUrl": "https://api.lauramac.com",
     "LauraMacClientId": "your-client-id",
     "LauraMacClientSecret": "your-client-secret",
-    "DocumentSyncIntervalMinutes": "5"
+    "DocumentSyncIntervalMinutes": "5",
+    "CanopyTransactionIdentifier": "VPM WHSL_{transactionId}-VPM"
   }
 }
