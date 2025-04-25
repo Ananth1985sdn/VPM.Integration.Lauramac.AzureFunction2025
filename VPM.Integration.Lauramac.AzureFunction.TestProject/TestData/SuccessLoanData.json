@@ -1,0 +1,37 @@
+[
+  {
+    "loanId": "d9542299-4ca4-40f9-8686-c68c9d712a8d",
+    "fields": {
+      "Loan.LoanNumber": "1110000062",
+      "Fields.19": "Purchase",
+      "Fields.608": "",
+      "Loan.LoanAmount": "250000.0000",
+      "Loan.LTV": "71.42900",
+      "Fields.976": "71.4290000000",
+      "Loan.Address1": "TBD",
+      "Loan.City": "Oklahoma City",
+      "Loan.State": "OK",
+      "Fields.15": "73134",
+      "Fields.1041": "Detached",
+      "Loan.OccupancyStatus": "PrimaryResidence",
+      "Fields.CX.VP.DOC.TYPE": "",
+      "Fields.1401": "",
+      "Fields.4000": "Andy",
+      "Fields.4002": "America",
+      "Fields.CX.CREDITSCORE": "784.0000000000",
+      "Fields.325": "0.0000000000",
+      "Fields.3": "0.0000000000",
+      "Fields.742": "0.0000000000",
+      "Fields.CX.VP.BUSINESS.PURPOSE": "",
+      "Fields.1550": "N",
+      "Fields.675": "N",
+      "Fields.QM.X23": "General ATR",
+      "Fields.65": "999-60-3333",
+      "Alert.LienPositionRequiredIfResubordinated.AlertCount": "",
+      "Alert.LienPositionRequiredIfSubjectProperty.AlertCount": "",
+      "Fields.CX.PURCHASEPRICE": "0.0000000000",
+      "Fields.356": "470000.0000000000",
+      "Fields.CX.NAME_DDPROVIDER": "Canopy"
+    }
+  }
+]

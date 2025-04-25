@@ -15,18 +15,20 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
     public class LoanDataService : ILoanDataService
     {
         private readonly ILogger<LoanDataService> _logger;
-        public LoanDataService(ILogger<LoanDataService> logger)
+        private readonly HttpClient _httpClient;
+        public LoanDataService(ILogger<LoanDataService> logger, HttpClient httpClient)
         {
             _logger = logger;
+            _httpClient = httpClient;
         }
         public async Task<string> GetLoanData(string requestUrl, StringContent content, string accessToken)
         {
             try
             {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                //using var client = new HttpClient();
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                var response = await client.PostAsync(requestUrl, content);
+                var response = await _httpClient.PostAsync(requestUrl, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -49,7 +51,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
-                using var client = new HttpClient();
 
                 var requestBody = new FormUrlEncodedContent(new[]
                 {
@@ -61,7 +62,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                     new KeyValuePair<string, string>("scope", "lp")
                 });
 
-                var response = await client.PostAsync(fullUrl, requestBody);
+                var response = await _httpClient.PostAsync(fullUrl, requestBody);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -91,11 +92,10 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
             try
             {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var response = await client.GetAsync(fullUrl);
+                var response = await _httpClient.GetAsync(fullUrl);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -129,14 +129,13 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
             try
             {
-                using var httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var payload = new { attachments = new[] { attachmentId } };
                 var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
-                var response = await httpClient.PostAsync(requestUrl, content).ConfigureAwait(false);
+                var response = await _httpClient.PostAsync(requestUrl, content).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -187,9 +186,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                     throw new ArgumentException("Document URL cannot be null or empty.", nameof(documentURL));
                 }
 
-                using var httpClient = new HttpClient();
                 var request = new HttpRequestMessage(HttpMethod.Get, documentURL);
-                var response = await httpClient.SendAsync(request).ConfigureAwait(false);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
