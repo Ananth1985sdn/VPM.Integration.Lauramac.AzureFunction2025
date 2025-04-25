@@ -28,27 +28,21 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
                                 ""token_type"": ""Bearer""
                                 }";
 
-            // Arrange
             var mockLoanDataService = new Mock<ILoanDataService>();
 
-            // Setup mock behavior for GetToken method with the expected parameters
             mockLoanDataService.Setup(service =>
                 service.GetToken(userName, password, clientId, clientSecret, tokenUrl))
                 .ReturnsAsync(mockJson);
 
-            // If using Dependency Injection (DI), set up the services
             var services = new ServiceCollection();
             services.AddSingleton(mockLoanDataService.Object);
             var serviceProvider = services.BuildServiceProvider();
 
-            // Inject the service into the class you're testing
             var loanService = serviceProvider.GetService<ILoanDataService>();
 
-            // Act
             var tokenJson = await loanService.GetToken(userName, password, clientId, clientSecret, tokenUrl);
             dynamic tokenObj = JsonConvert.DeserializeObject(tokenJson);
 
-            // Assert
             Assert.NotNull(tokenObj.access_token);
         }
 
@@ -71,27 +65,21 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
                                 ""error"": ""invalid_grant""
                                 }";
 
-            // Arrange
             var mockLoanDataService = new Mock<ILoanDataService>();
 
-            // Setup mock behavior for GetToken method with the expected parameters
             mockLoanDataService.Setup(service =>
                 service.GetToken(userName, password, clientId, clientSecret, tokenUrl))
                 .ReturnsAsync(mockJson);
 
-            // If using Dependency Injection (DI), set up the services
             var services = new ServiceCollection();
             services.AddSingleton(mockLoanDataService.Object);
             var serviceProvider = services.BuildServiceProvider();
 
-            // Inject the service into the class you're testing
             var loanService = serviceProvider.GetService<ILoanDataService>();
 
-            // Act
             var tokenJson = await loanService.GetToken(userName, password, clientId, clientSecret, tokenUrl);
             dynamic tokenObj = JsonConvert.DeserializeObject(tokenJson);
 
-            // Assert
             Assert.Null(tokenObj.access_token);
         }
 
@@ -121,12 +109,10 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Act
             var result = await service.GetLoanData(encompassPipelineUrl, content, encompassAuthToken);
             var loanResponse = JsonConvert.DeserializeObject<List<Models.Encompass.Response.Loan>>(result);
             var staticLoanResponse = JsonConvert.DeserializeObject<List<Models.Encompass.Response.Loan>>(expectedContent);
             
-            // Assert
             Assert.Equal(staticLoanResponse[0].LoanId, loanResponse[0].LoanId);
         }
         
@@ -156,11 +142,9 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Act
             var result = await service.GetLoanData(encompassPipelineUrl, content, encompassAuthToken);
             var loanResponse = JsonConvert.DeserializeObject<List<Models.Encompass.Response.Loan>>(result);
 
-            // Assert
             Assert.Equal(loanResponse.Count,0);
         }
 

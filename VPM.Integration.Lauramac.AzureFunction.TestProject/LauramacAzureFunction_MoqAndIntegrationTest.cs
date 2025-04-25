@@ -14,7 +14,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Tests
         [Fact]
         public async Task TestGetLoanData_MockVsIntegration_ShouldMatch()
         {
-            // Arrange: environment setup
             Environment.SetEnvironmentVariable("EncompassPipelineUrl", "https://api.elliemae.com/encompass/v3/loanPipeline");
             Environment.SetEnvironmentVariable("EncompassAuthToken", "0004R2RHhOxb7g64wHTgFwmNbOgv");
 
@@ -36,9 +35,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Tests
             var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // 🔹 Integration: use real HttpClient + service
             var loggerMock = new Mock<ILogger<LoanDataService>>();
-            var httpClient = new HttpClient(); // NOTE: this will hit the real API
+            var httpClient = new HttpClient(); 
             var realService = new LoanDataService(loggerMock.Object, httpClient);
 
             var accessToken = await realService.GetToken(userName, password, clientId, clientSecret, tokenUrl);
@@ -46,7 +44,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Tests
             var realResult = await realService.GetLoanData(encompassPipelineUrl, content, accessToken);
             var realLoanResponse = JsonConvert.DeserializeObject<List<Loan>>(realResult);
 
-            // 🔹 Mock: return expected JSON from file
             var expectedContent = await File.ReadAllTextAsync(@"TestData/SuccessLoanData.json", Encoding.UTF8);
             var loanDataServiceMock = new Mock<ILoanDataService>();
 
@@ -61,7 +58,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Tests
             var mockResult = await mockService.GetLoanData(encompassPipelineUrl, content, encompassAuthToken);
             var mockLoanResponse = JsonConvert.DeserializeObject<List<Loan>>(mockResult);
 
-            // Assert: compare mock vs real
             Assert.Equal(mockLoanResponse.Count, realLoanResponse.Count);
             Assert.Equal(mockLoanResponse[0].LoanId, realLoanResponse[0].LoanId);
         }
