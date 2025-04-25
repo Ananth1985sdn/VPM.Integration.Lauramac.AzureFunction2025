@@ -17,11 +17,23 @@ namespace VPM.Integration.Lauramac.AzureFunction
     {
         private readonly ILogger _logger;
         private readonly ILoanDataService _loanDataService;
-
+        private LoanRequest loanRequest;
+        private LoanDocumentRequest loanDoumentRequest;
         public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService)
         {
             _logger = loggerFactory.CreateLogger<LauramacAzureFunction>();
             _loanDataService = loanDataService;
+            loanRequest = new LoanRequest
+            {
+                Loans = new List<LauramacLoan>(),
+                TransactionIdentifier = "", 
+                OverrideDuplicateLoans = "0"
+            };
+            var loanDoumentRequest = new LoanDocumentRequest
+            {
+                LoanDocuments = new List<LoanDocument>(),
+                TransactionIdentifier = "",
+            };
         }
 
         [Function("LauramacAzureFunction")]
@@ -77,7 +89,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
             var pipelineUrl = Environment.GetEnvironmentVariable("EncompassLoanPipelineURL");
             var documentPackage = Environment.GetEnvironmentVariable("DocumentPackageName");
-
+            string sellerName = string.Empty;
             var requestUrl = $"{baseUrl?.TrimEnd('/')}{pipelineUrl}";
             var requestBody = RequestBody();
             var json = JsonConvert.SerializeObject(requestBody);
@@ -104,20 +116,8 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 DateTime currentDateTime = DateTime.Now;
                 string transactionId = currentDateTime.ToString("yyyy-MM");
                 var transactionIdentifier = canopyTransactionIdentifier.Replace("{transactionId}", transactionId);
-                var loanRequest = new LoanRequest
-                {
-                    Loans = new List<LauramacLoan>(),
-                    TransactionIdentifier = transactionIdentifier,
-                    OverrideDuplicateLoans = "0"
-                };
-
-                var loanDoumentRequest = new LoanDocumentRequest
-                {
-                    LoanDocuments = new List<LoanDocument>(),
-                    TransactionIdentifier = transactionIdentifier,
-                };
-
-                string sellerName = string.Empty;
+                loanRequest.TransactionIdentifier = transactionIdentifier;
+                loanDoumentRequest.TransactionIdentifier = transactionIdentifier;
 
                 foreach (var loan in loans ?? Enumerable.Empty<EncompassLoan>())
                 {
