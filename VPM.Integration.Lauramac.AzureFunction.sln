@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35919.96 d17.13
+VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VPM.Integration.Lauramac.AzureFunction", "VPM.Integration.Lauramac.AzureFunction\VPM.Integration.Lauramac.AzureFunction.csproj", "{6789B788-4406-48F1-9CFD-F01A679A54AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VPM.Integration.Lauramac.AzureFunction.TestProject", "VPM.Integration.Lauramac.AzureFunction.TestProject\VPM.Integration.Lauramac.AzureFunction.TestProject.csproj", "{E58875B2-270A-4722-A624-5ABA42FD170F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VPM.Integration.Lauramac.AzureFunction.Tests", "VPM.Integration.Lauramac.AzureFunction.TestProject\VPM.Integration.Lauramac.AzureFunction.Tests.csproj", "{E58875B2-270A-4722-A624-5ABA42FD170F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
