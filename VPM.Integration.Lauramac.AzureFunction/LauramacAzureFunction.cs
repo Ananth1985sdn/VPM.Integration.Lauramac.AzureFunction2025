@@ -10,6 +10,7 @@ using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response;
 using EncompassLoan = VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response.Loan;
 using LauramacLoan = VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request.Loan;
 using Newtonsoft.Json.Linq;
+using VPM.Integration.Lauramac.AzureFunction.Services;
 
 namespace VPM.Integration.Lauramac.AzureFunction
 {
@@ -17,19 +18,21 @@ namespace VPM.Integration.Lauramac.AzureFunction
     {
         private readonly ILogger _logger;
         private readonly ILoanDataService _loanDataService;
+        private readonly ILauramacService _lauramacService;
         private LoanRequest loanRequest;
         private LoanDocumentRequest loanDoumentRequest;
-        public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService)
+        public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService, ILauramacService lauramacService)
         {
             _logger = loggerFactory.CreateLogger<LauramacAzureFunction>();
             _loanDataService = loanDataService;
+            _lauramacService = lauramacService;
             loanRequest = new LoanRequest
             {
                 Loans = new List<LauramacLoan>(),
                 TransactionIdentifier = "", 
                 OverrideDuplicateLoans = "0"
             };
-            var loanDoumentRequest = new LoanDocumentRequest
+            loanDoumentRequest = new LoanDocumentRequest
             {
                 LoanDocuments = new List<LoanDocument>(),
                 TransactionIdentifier = "",
@@ -49,6 +52,10 @@ namespace VPM.Integration.Lauramac.AzureFunction
                     if (!string.IsNullOrEmpty(token))
                     {
                         await CallLoanPipelineApiAsync(token);
+                        var response = await _lauramacService.SendLoanDataAsync(loanRequest);
+                        _logger.LogInformation("Lauramac Response: {Response}", response);
+                        var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
+                        _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
                     }
                     else
                     {
