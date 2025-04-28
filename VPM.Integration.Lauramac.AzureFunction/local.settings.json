@@ -15,9 +15,13 @@
     "EncompassGetDocumentsURL": "/encompass/v3/loans/{loanId}/attachments?includeRemoved=true",
     "EncompassGetDocumentURL": "/encompass/v3/loans/{loanId}/attachmentDownloadUrl",
     "DocumentPackageName": "Vista Point - Due Diligence Package",
-    "LauraMacBaseUrl": "https://api.lauramac.com",
-    "LauraMacClientId": "your-client-id",
-    "LauraMacClientSecret": "your-client-secret",
+    "https": null,
+    "LauraMacApiBaseURL": "https://app.uat.lauramac.io/apis",
+    "LauraMacTokenURL": "/client/authorization",
+    "LauraMacImportLoansUrl": "/import/loans",
+    "LauraMacImportLoansDocumentsUrl": "/import/loans/documents",
+    "LauraMacUsername": "admin",
+    "LauraMacPassword": "LauraMac@123",
     "DocumentSyncIntervalMinutes": "5",
     "CanopyTransactionIdentifier": "VPM WHSL_{transactionId}-VPM"
   }
