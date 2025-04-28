@@ -30,7 +30,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
                 var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
                 var lauraMacBaseURL = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
-                var fullUrl = $"{lauraMacBaseURL}";
+                var lauraMacTokenURL = Environment.GetEnvironmentVariable("LauraMacTokenURL");
+                var fullUrl = $"{lauraMacBaseURL}{lauraMacTokenURL}";
                 string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullUrl);               
                
                 if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
