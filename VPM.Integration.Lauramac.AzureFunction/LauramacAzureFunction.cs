@@ -224,6 +224,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
                                 else if (string.IsNullOrWhiteSpace(url) && !Uri.IsWellFormedUriString(url, UriKind.Absolute))
                                 {
+                                    _logger.LogInformation("Document URL: {Url}", url);
                                     continue;
                                 }
                                 else
