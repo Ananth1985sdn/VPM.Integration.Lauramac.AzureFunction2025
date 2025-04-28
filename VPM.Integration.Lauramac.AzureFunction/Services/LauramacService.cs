@@ -73,7 +73,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
                 var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
                 var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
-               
 
                 var body = new
                 {
