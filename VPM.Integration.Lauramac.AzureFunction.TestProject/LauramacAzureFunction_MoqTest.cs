@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 using System.Text;
 using VPM.Integration.Lauramac.AzureFunction.Interface;
 using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Request;
+using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request;
+using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response;
 
 namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 {
@@ -241,6 +243,41 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             dynamic tokenObj = JsonConvert.DeserializeObject(tokenJson);
 
             Assert.NotNull(tokenObj.access_token);
+        }
+        [Fact]
+        public async Task TestCase_SendLoanDataAsyncToLauraMac()
+        {
+            Environment.SetEnvironmentVariable("LauraMacUsername", "admin");
+            Environment.SetEnvironmentVariable("LauraMacPassword", "LauraMac@123");
+            Environment.SetEnvironmentVariable("LauraMacApiBaseURL", "https://app.uat.lauramac.io/apis");
+            Environment.SetEnvironmentVariable("LauraMacTokenURL", "/client/authorization");
+
+            var baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
+            var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
+            var importLoansRequestUrl = $"{baseUrl}{importLoansUrl}";
+
+            string lauramacImportLoansResponseMockJson = await File.ReadAllTextAsync(@"TestData/LauramacImportLoanSuccessResponse.json", Encoding.UTF8); ;
+            var lauramacImportLoansResponseMock = JsonConvert.DeserializeObject<ImportResponse>(lauramacImportLoansResponseMockJson);
+
+            var mockLauramacService = new Mock<ILauramacService>();
+
+            var lauramacImportLoansSerializedRequest = await File.ReadAllTextAsync(@"TestData/LauramacImportLoansRequest.json", Encoding.UTF8);
+            var lauramacImportLoansRequest = JsonConvert.DeserializeObject<LoanRequest>(lauramacImportLoansSerializedRequest);
+
+            mockLauramacService.Setup(service =>
+                service.SendLoanDataAsync(It.IsAny<LoanRequest>()))
+                .ReturnsAsync(lauramacImportLoansResponseMockJson);
+
+            var services = new ServiceCollection();
+            services.AddSingleton(mockLauramacService.Object);
+            var serviceProvider = services.BuildServiceProvider();
+
+            var lauramacService = serviceProvider.GetService<ILauramacService>();
+
+            var lauramacImportLoansResponseJson = await lauramacService.SendLoanDataAsync(lauramacImportLoansRequest);
+            var lauramacImportLoansResponse = JsonConvert.DeserializeObject<ImportResponse>(lauramacImportLoansSerializedRequest);
+
+            Assert.Equal(lauramacImportLoansResponse.Loans[0].LoanID, lauramacImportLoansResponseMock.Loans[0].LoanID);
         }
     }
 }

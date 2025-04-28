@@ -1,0 +1,13 @@
+{
+  "Import Message": {
+    "Queued": 1,
+    "Ignored - Duplicate": 0,
+    "Error": 0
+  },
+  "Loans": [
+    {
+      "LoanID": "66b6fc88-f675-4cdd-b78a-214453cde1e9",
+      "IsExists": true
+    }
+  ]
+}

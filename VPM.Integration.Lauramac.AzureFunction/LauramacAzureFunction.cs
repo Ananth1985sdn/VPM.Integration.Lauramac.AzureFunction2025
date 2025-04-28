@@ -54,7 +54,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                     if (!string.IsNullOrEmpty(token) && !token.Contains("Error") && !token.Contains("Exception"))
                     {
                         await CallLoanPipelineApiAsync(token);
-                        if(loanRequest.Loans.Count == 0)
+                        if (loanRequest.Loans.Count == 0)
                         {
                             _logger.LogInformation("No loans found to process.");
                             return;

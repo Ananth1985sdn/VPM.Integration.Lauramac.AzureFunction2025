@@ -1,0 +1,34 @@
+{
+  "Loans": [
+    {
+      "Foreign National": null,
+      "Zip": "73134",
+      "Borrower First Name": "Andy",
+      "Address": "TBD",
+      "Loan Number": "1110000062",
+      "FICO": "784.0000000000",
+      "LoanID": "66b6fc88-f675-4cdd-b78a-214453cde1e9",
+      "Prop Type": "",
+      "Loan Term": "0.0000000000",
+      "Appraised Value": "470000.0000000000",
+      "Escrow Flag": null,
+      "Occupancy": "PrimaryResidence",
+      "Loan Amount": "250000.0000",
+      "Original CLTV": "71.4290000000",
+      "Note Rate": "0.0000000000",
+      "Doc Type": "",
+      "Purchase Price": "0.0000000000",
+      "Lien Position": null,
+      "Purpose": "Purchase",
+      "Borrower SSN": "999-60-3333",
+      "City": "Oklahoma City",
+      "Borrower Last Name": "America",
+      "State": "OK",
+      "Amortization Type": "",
+      "Original LTV": "71.42900"
+    }
+  ],
+  "Transaction Identifier": "VPM WHSL_2025-04-VPM",
+  "Seller Name": "Canopy",
+  "overrideDuplicateLoans": "0"
+}
