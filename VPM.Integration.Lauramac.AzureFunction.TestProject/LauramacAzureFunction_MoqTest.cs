@@ -68,7 +68,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             var mockLoanDataService = new Mock<ILoanDataService>();
 
             mockLoanDataService.Setup(service =>
-                service.GetToken(userName, password, clientId, clientSecret, tokenUrl))
+                service.GetToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(mockJson);
 
             var services = new ServiceCollection();
