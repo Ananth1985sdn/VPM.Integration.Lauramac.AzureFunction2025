@@ -47,7 +47,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             try
             {
                 _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-                string token = await GetEncompassAccessTokenAsync(_logger);
+                string token = await GetEncompassAccessTokenAsync();
 
                 if (myTimer.ScheduleStatus is not null)
                 {
@@ -77,7 +77,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             }
         }
 
-        public async Task<string> GetEncompassAccessTokenAsync(ILogger log)
+        public async Task<string> GetEncompassAccessTokenAsync()
         {
             var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
             var tokenEndpoint = Environment.GetEnvironmentVariable("EncompassTokenUrl");
