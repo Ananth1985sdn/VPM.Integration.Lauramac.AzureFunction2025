@@ -8,4 +8,13 @@ For a `TimerTrigger` to work, you provide a schedule in the form of a [cron expr
 
 ## Learn more
 
-<TODO> Documentation
+<TODO> 
+
+								Lauramac Azure Functions Project
+This project contains Azure Functions and supporting services related to Lauramac integration, including:
+
+Loan Data retrieval via Encompass API
+
+Mock and integration testing
+
+Email settings configuration for notifications
