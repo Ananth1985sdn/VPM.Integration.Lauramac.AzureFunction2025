@@ -44,8 +44,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 return $"Exception: {ex.Message}";
             }
         }
-
-
         public async Task<string> GetToken(string username, string password, string clientId, string clientSecret, string fullUrl)
         {
             try
@@ -80,8 +78,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 return $"Exception: {ex.Message}";
             }
         }
-
-
         public async Task<string> GetAllLoanDocuments(string accessToken, string loanId)
         {
             var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
@@ -112,8 +108,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 return $"Error while getting loan documents {fullUrl}";
             }
         }
-
-
         public async Task<string> GetDocumentUrl(string loanId, string attachmentId, string accessToken)
         {
             string documentDownloadUrl = string.Empty;
@@ -168,8 +162,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
             return documentDownloadUrl;
         }
-
-
         public async Task<bool> DownloadDocument(string loanId, string lastName, string documentURL)
         {
             bool documentDownloaded = false;

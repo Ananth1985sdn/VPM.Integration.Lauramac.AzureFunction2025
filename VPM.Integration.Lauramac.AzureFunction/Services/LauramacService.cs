@@ -13,7 +13,6 @@ using Newtonsoft.Json;
 
 namespace VPM.Integration.Lauramac.AzureFunction.Services
 {
-    
     public class LauramacService : ILauramacService
     {
         private readonly ILogger<LauramacService> _logger;
