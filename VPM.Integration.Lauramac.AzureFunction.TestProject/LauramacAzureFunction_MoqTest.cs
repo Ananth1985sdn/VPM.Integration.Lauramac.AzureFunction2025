@@ -277,7 +277,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             var lauramacImportLoansResponseJson = await lauramacService.SendLoanDataAsync(lauramacImportLoansRequest);
             var lauramacImportLoansResponse = JsonConvert.DeserializeObject<ImportResponse>(lauramacImportLoansSerializedRequest);
 
-            Assert.Equal(lauramacImportLoansResponse.Loans[0].LoanID, lauramacImportLoansResponseMock.Loans[0].LoanID);
+            Assert.Equal(lauramacImportLoansResponse?.Loans[0].LoanID, lauramacImportLoansResponseMock?.Loans[0].LoanID);
         }
     }
 }
