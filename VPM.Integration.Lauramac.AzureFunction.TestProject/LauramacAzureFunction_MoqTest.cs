@@ -148,8 +148,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             Assert.Equal(loanResponse.Count,0);
         }
 
-        
-
         private static Object RequestBody()
         {
             var filterTerms = new List<FilterTerm>
@@ -209,14 +207,18 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         }
 
         [Fact]
-        public async Task TestCase_GetAccessTokenFromForLauraMac()
+        public async Task TestCase_GetAccessTokenForLauraMac()
         {
-            Environment.SetEnvironmentVariable("EncompassUsername", "gananth@encompass:TEBE11212117");
-            Environment.SetEnvironmentVariable("EncompassPassword", "Welcome@123"); 
+            Environment.SetEnvironmentVariable("LauraMacUsername", "admin");
+            Environment.SetEnvironmentVariable("LauraMacPassword", "LauraMac@123");
+            Environment.SetEnvironmentVariable("LauraMacApiBaseURL", "https://app.uat.lauramac.io/apis");
+            Environment.SetEnvironmentVariable("LauraMacTokenURL", "/client/authorization");
 
-            var userName = Environment.GetEnvironmentVariable("EncompassUsername");
-            var password = Environment.GetEnvironmentVariable("EncompassPassword"); 
-            var tokenUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");   
+            var userName = Environment.GetEnvironmentVariable("LauraMacUsername");
+            var password = Environment.GetEnvironmentVariable("LauraMacPassword"); 
+            var baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
+            var tokenUrl = Environment.GetEnvironmentVariable("LauraMacTokenURL");
+            var tokenRequestUrl = $"{baseUrl}{tokenUrl}";
 
             string mockJson = @"{
                                 ""access_token"": ""0004R2RHhOxb7g64wHTgFwmNbOgv"",
@@ -226,7 +228,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             var mockLauramacService = new Mock<ILauramacService>();
 
             mockLauramacService.Setup(service =>
-                service.GetLauramacAccessToken(userName, password, tokenUrl))
+                service.GetLauramacAccessToken(userName, password, tokenRequestUrl))
                 .ReturnsAsync(mockJson);
 
             var services = new ServiceCollection();
@@ -235,7 +237,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
             var lauramacService = serviceProvider.GetService<ILauramacService>();
 
-            var tokenJson = await lauramacService.GetLauramacAccessToken(userName, password, tokenUrl);
+            var tokenJson = await lauramacService.GetLauramacAccessToken(userName, password, tokenRequestUrl);
             dynamic tokenObj = JsonConvert.DeserializeObject(tokenJson);
 
             Assert.NotNull(tokenObj.access_token);
