@@ -64,7 +64,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 return $"Exception: {ex.Message}";
             }
         }
-
         public async Task<string> GetLauramacAccessToken(string username, string password, string fullUrl)
         {
             try
@@ -104,8 +103,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 return $"Exception: {ex.Message}";
             }
         }
-
-
         public Task<string> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest)
         {
             throw new NotImplementedException();
