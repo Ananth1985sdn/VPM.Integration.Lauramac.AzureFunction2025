@@ -207,5 +207,38 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             };
             return requestBody;
         }
+
+        [Fact]
+        public async Task TestCase_GetAccessTokenFromForLauraMac()
+        {
+            Environment.SetEnvironmentVariable("EncompassUsername", "gananth@encompass:TEBE11212117");
+            Environment.SetEnvironmentVariable("EncompassPassword", "Welcome@123"); 
+
+            var userName = Environment.GetEnvironmentVariable("EncompassUsername");
+            var password = Environment.GetEnvironmentVariable("EncompassPassword"); 
+            var tokenUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");   
+
+            string mockJson = @"{
+                                ""access_token"": ""0004R2RHhOxb7g64wHTgFwmNbOgv"",
+                                ""token_type"": ""Bearer""
+                                }";
+
+            var mockLauramacService = new Mock<ILauramacService>();
+
+            mockLauramacService.Setup(service =>
+                service.GetLauramacAccessToken(userName, password, tokenUrl))
+                .ReturnsAsync(mockJson);
+
+            var services = new ServiceCollection();
+            services.AddSingleton(mockLauramacService.Object);
+            var serviceProvider = services.BuildServiceProvider();
+
+            var lauramacService = serviceProvider.GetService<ILauramacService>();
+
+            var tokenJson = await lauramacService.GetLauramacAccessToken(userName, password, tokenUrl);
+            dynamic tokenObj = JsonConvert.DeserializeObject(tokenJson);
+
+            Assert.NotNull(tokenObj.access_token);
+        }
     }
 }

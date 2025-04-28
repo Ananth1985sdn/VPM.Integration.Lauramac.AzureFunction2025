@@ -9,6 +9,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Interface
 {
     public interface ILauramacService
     {
+        public Task<string> GetLauramacAccessToken(string username, string password, string fullUrl);
         Task<string> SendLoanDataAsync(LoanRequest loanRequest);
         Task<string> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest);
     }

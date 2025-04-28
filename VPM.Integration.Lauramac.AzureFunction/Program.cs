@@ -15,6 +15,6 @@ builder.ConfigureFunctionsWebApplication();
 //     .ConfigureFunctionsApplicationInsights();
 Microsoft.Extensions.Logging.ILogger logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
 
-builder.Services.AddTransient<ILauramacService, LauramacService>();
+builder.Services.AddHttpClient<ILauramacService, LauramacService>();
 builder.Services.AddHttpClient<ILoanDataService, LoanDataService>();
 builder.Build().Run();

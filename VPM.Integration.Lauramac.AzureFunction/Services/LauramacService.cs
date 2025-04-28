@@ -27,15 +27,20 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
+                var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
+                var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
                 var lauraMacBaseURL = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
-                var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
-                var requestUrl = $"{lauraMacBaseURL}{importLoansUrl}";
-                _logger.LogInformation("Request URL: {RequestUrl}", requestUrl);
-                string accessToken = await GetLauramacAccessToken();
+                var fullUrl = $"{lauraMacBaseURL}";
+                string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullUrl);               
+               
                 if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
                 {
                     return null;
                 }
+
+                var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
+                var requestUrl = $"{lauraMacBaseURL}{importLoansUrl}";
+                _logger.LogInformation("Request URL: {RequestUrl}", requestUrl);
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 string loanJson = JsonConvert.SerializeObject(loanRequest);
@@ -59,7 +64,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             }
         }
 
-        private async Task<string> GetLauramacAccessToken()
+        public async Task<string> GetLauramacAccessToken(string username, string password, string fullUrl)
         {
             try
             {
@@ -67,7 +72,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
                 var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
                 var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
-                var fullUrl = $"{lauraMacBaseURL}{importLoansUrl}";
+               
 
                 var body = new
                 {
