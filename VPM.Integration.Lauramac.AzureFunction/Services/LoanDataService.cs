@@ -25,7 +25,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
-                //using var client = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var response = await _httpClient.PostAsync(requestUrl, content);
@@ -42,7 +41,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting loan data from {RequestUrl}", requestUrl);
-                return null;
+                return $"Exception: {ex.Message}";
             }
         }
 
@@ -72,12 +71,13 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Error: {response.StatusCode}, Content: {errorContent}");
+                _logger.LogError("Error response received: {ErrorContent}", errorContent);
+                return $"Error: {response.StatusCode}, Content: {errorContent}";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting token from {Url}", fullUrl);
-                return null;
+                return $"Exception: {ex.Message}";
             }
         }
 
@@ -116,16 +116,12 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
         public async Task<string> GetDocumentUrl(string loanId, string attachmentId, string accessToken)
         {
+            string documentDownloadUrl = string.Empty;
             var encompassBaseURL = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
             var documentURL = Environment.GetEnvironmentVariable("EncompassGetDocumentURL");
 
-            if (string.IsNullOrWhiteSpace(encompassBaseURL) || string.IsNullOrWhiteSpace(documentURL))
-            {
-                throw new InvalidOperationException("Missing environment variables for Encompass API base URL or document URL endpoint.");
-            }
-
-            var endpoint = documentURL.Replace("{loanId}", loanId);
-            var requestUrl = $"{encompassBaseURL.TrimEnd('/')}{endpoint}";
+            var endpoint = documentURL?.Replace("{loanId}", loanId);
+            var requestUrl = $"{encompassBaseURL?.TrimEnd('/')}{endpoint}";
 
             try
             {
@@ -150,28 +146,27 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 if (responseObject?.AttachmentUrls == null || responseObject.AttachmentUrls.Count == 0)
                 {
                     _logger.LogWarning("No attachments found in the response");
-                    return null;
                 }
 
-                var attachment = responseObject.AttachmentUrls[0];
+                var attachment = responseObject?.AttachmentUrls[0];
                 var pages = attachment?.Pages;
 
                 if (pages != null && pages.Count > 0)
                 {
-                    return attachment.originalUrls?.FirstOrDefault(); 
+                    documentDownloadUrl = attachment.originalUrls?.FirstOrDefault(); 
                 }
                 else
                 {
                     _logger.LogWarning("No pages found in the attachment");
-                    return null;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting document download URL from {Url}", requestUrl);
+                return $"Exception: while getting document download URL {requestUrl}";
             }
 
-            return null;
+            return documentDownloadUrl;
         }
 
 
