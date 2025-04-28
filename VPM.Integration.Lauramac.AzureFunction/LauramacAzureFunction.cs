@@ -113,7 +113,18 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
             try
             {
-                _ = JToken.Parse(response); 
+
+                try
+                {
+                    _ = JToken.Parse(response); 
+                }
+                catch (JsonReaderException ex)
+                {
+                    _logger.LogInformation(
+                        "Invalid JSON in GetLoanData: {Response}. Error: {ErrorMessage}",
+                        response, ex.Message);
+                    return;
+                }
 
                 var loans = JsonConvert.DeserializeObject<List<EncompassLoan>>(response);
                 _logger.LogInformation("Number of Loans: {LoanCount}", loans?.Count ?? 0);
