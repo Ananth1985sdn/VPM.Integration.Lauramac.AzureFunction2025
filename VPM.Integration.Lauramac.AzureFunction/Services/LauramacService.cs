@@ -153,8 +153,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                             remainingDocuments = remainingDocuments
                                 .Where(doc =>
                                 {
-                                    var externalId = ((dynamic)doc).ExternalFileId;
-                                    return uploadResponse.Results.Any(r => r.ExternalFileId == externalId && r.Status == "failure");
+                                    var loanId = ((dynamic)doc).LoanID;
+                                    return uploadResponse.Results.Any(r => r.LoanID == loanId && r.Status == "failure");
                                 })
                                 .ToList();
                         }
