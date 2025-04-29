@@ -20,7 +20,7 @@
     "LauraMacApiBaseURL": "https://app.uat.lauramac.io/apis",
     "LauraMacTokenURL": "/client/authorization",
     "LauraMacImportLoansUrl": "/import/loans",
-    "LauraMacImportLoansDocumentsUrl": "/import/loans/documents",
+    "LauraMacImportLoanDocumentsUrl": "/import/loans/documents",
     "LauraMacUsername": "admin",
     "LauraMacPassword": "LauraMac@123",
     "DocumentSyncIntervalMinutes": "5",

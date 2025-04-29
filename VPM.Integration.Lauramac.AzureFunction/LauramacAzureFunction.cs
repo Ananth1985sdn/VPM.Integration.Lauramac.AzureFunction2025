@@ -10,9 +10,6 @@ using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response;
 using EncompassLoan = VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response.Loan;
 using LauramacLoan = VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request.Loan;
 using Newtonsoft.Json.Linq;
-using VPM.Integration.Lauramac.AzureFunction.Services;
-using Azure.Core;
-using System.Diagnostics.Eventing.Reader;
 
 namespace VPM.Integration.Lauramac.AzureFunction
 {
@@ -61,6 +58,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         }
                         var response = await _lauramacService.SendLoanDataAsync(loanRequest);
                         _logger.LogInformation("Lauramac Response: {Response}", response);
+
                         var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
                         _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
                     }

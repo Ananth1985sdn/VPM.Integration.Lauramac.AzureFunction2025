@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request;
+using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response;
 
 namespace VPM.Integration.Lauramac.AzureFunction.Interface
 {
@@ -11,6 +12,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Interface
     {
         Task<string> GetLauramacAccessToken(string username, string password, string fullUrl);
         Task<string> SendLoanDataAsync(LoanRequest loanRequest);
-        Task<string> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest);
+        Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest);
     }
 }
