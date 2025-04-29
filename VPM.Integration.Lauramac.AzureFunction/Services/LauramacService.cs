@@ -17,7 +17,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             _logger = logger;
             _httpClient = httpClient;
         }
-        public async Task<string> SendLoanDataAsync(LoanRequest loanRequest)
+        public async Task<ImportResponse> SendLoanDataAsync(LoanRequest loanRequest)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                
                 if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
                 {
-                    return null;
+                    return new ImportResponse { Status = accessToken };
                 }
 
                 var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
@@ -45,17 +45,32 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var importSuccessResponse = JsonConvert.DeserializeObject<ImportResponse>(responseContent);
+                    if (importSuccessResponse != null)
+                    {
+                        importSuccessResponse.Status = "Success";
+                        return importSuccessResponse;
+                    }
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
                 _logger.LogError("Error response received: {ErrorContent}", errorContent);
-                return $"Error: {response.StatusCode}, Content: {errorContent}";
+                var importErrorResponse = JsonConvert.DeserializeObject<ImportResponse>(errorContent);
+               
+                if (importErrorResponse != null)
+                {
+                    importErrorResponse.Status = "Failure";
+                    return importErrorResponse;
+                }
+
+                return new ImportResponse { Status = "Failure" };
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while posting loan data to SendLoanDataAsync");
-                return $"Exception: {ex.Message}";
+                return new ImportResponse { Status = $"Exception: {ex.Message}" };
             }
         }
         public async Task<string> GetLauramacAccessToken(string username, string password, string fullUrl)
@@ -183,8 +198,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
             return finalResults;
         }
-
-
         private int GetRetryDelay(int attempt)
         {
             return (int)(Math.Pow(2, attempt) * 500 + new Random().Next(100));

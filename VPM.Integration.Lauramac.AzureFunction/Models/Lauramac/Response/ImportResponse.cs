@@ -12,6 +12,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response
         [JsonProperty("Import Message")]
         public ImportMessage ImportMessage { get; set; }
 
+        public string? Status { get; set; }
+
         public List<Loan> Loans { get; set; }
     }
 }

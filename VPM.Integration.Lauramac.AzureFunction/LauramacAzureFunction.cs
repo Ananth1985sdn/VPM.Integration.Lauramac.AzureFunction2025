@@ -10,6 +10,7 @@ using VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response;
 using EncompassLoan = VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response.Loan;
 using LauramacLoan = VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request.Loan;
 using Newtonsoft.Json.Linq;
+using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response;
 
 namespace VPM.Integration.Lauramac.AzureFunction
 {
@@ -56,11 +57,19 @@ namespace VPM.Integration.Lauramac.AzureFunction
                             _logger.LogInformation("No loans found to process.");
                             return;
                         }
-                        var response = await _lauramacService.SendLoanDataAsync(loanRequest);
+                        ImportResponse response = await _lauramacService.SendLoanDataAsync(loanRequest);
                         _logger.LogInformation("Lauramac Response: {Response}", response);
-
-                        var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
-                        _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
+                        if(response.Status == "Success")
+                        {
+                            _logger.LogInformation("Loan data sent successfully.");
+                            var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
+                            _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
+                        }
+                        else
+                        {
+                            _logger.LogError("Failed to send loan data: {Message}", response.Status);
+                        }
+                        
                     }
                     else
                     {

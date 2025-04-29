@@ -208,15 +208,14 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
             var mockLauramacService = new Mock<ILauramacService>();
             mockLauramacService.Setup(service => service.SendLoanDataAsync(
-                It.IsAny<LoanRequest>())).ReturnsAsync(mockJson);
+                It.IsAny<LoanRequest>())).ReturnsAsync(expectedResponse);
 
             var lauramacService = BuildService(mockLauramacService.Object);
 
             var requestBodyJson = await ReadTestDataAsync(@"TestData/LauramacImportLoansRequest.json");
             var request = JsonConvert.DeserializeObject<LoanRequest>(requestBodyJson);
 
-            var resultJson = await lauramacService.SendLoanDataAsync(request);
-            var actualResponse = JsonConvert.DeserializeObject<ImportResponse>(resultJson);
+            var actualResponse = await lauramacService.SendLoanDataAsync(request);
 
             Assert.Equal(expectedResponse.Loans[0].LoanID, actualResponse.Loans[0].LoanID);
         }
