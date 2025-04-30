@@ -217,7 +217,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
             var actualResponse = await lauramacService.SendLoanDataAsync(request);
 
-            Assert.Equal(expectedResponse.Loans[0].LoanID, actualResponse.Loans[0].LoanID);
+            Assert.Equal(expectedResponse.Status, actualResponse.Status);
+
         }
 
         private static T BuildService<T>(T implementation) where T : class
