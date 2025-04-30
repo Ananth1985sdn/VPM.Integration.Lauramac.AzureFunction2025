@@ -26,8 +26,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var lauraMacBaseURL = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
                 var lauraMacTokenURL = Environment.GetEnvironmentVariable("LauraMacTokenURL");
                 var fullUrl = $"{lauraMacBaseURL}{lauraMacTokenURL}";
-                string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullUrl);               
-               
+                string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullUrl);
+
                 if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
                 {
                     return new ImportResponse { Status = accessToken };
@@ -57,7 +57,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var errorContent = await response.Content.ReadAsStringAsync();
                 _logger.LogError("Error response received: {ErrorContent}", errorContent);
                 var importErrorResponse = JsonConvert.DeserializeObject<ImportResponse>(errorContent);
-               
+
                 if (importErrorResponse != null)
                 {
                     importErrorResponse.Status = "Failure";
@@ -179,8 +179,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                             {
                                 foreach (var doc in remainingDocuments)
                                 {
-                                    // var result = await RetrySingleDocumentAsync(_httpClient, doc, MaxRetries);
-                                    // finalResults.Add(result);
+                                    var result = await RetrySingleDocumentAsync(_httpClient, doc, MaxRetries, loanDocumentRequest.SellerName, loanDocumentRequest.TransactionIdentifier, accessToken, requestUrl);
+                                    finalResults.Add(result);
                                 }
 
                                 break;
@@ -201,6 +201,50 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         private int GetRetryDelay(int attempt)
         {
             return (int)(Math.Pow(2, attempt) * 500 + new Random().Next(100));
+        }
+
+        private async Task<DocumentUploadResult> RetrySingleDocumentAsync(HttpClient httpClient, LoanDocument document, int maxRetries, string sellerName, string transactionIdentifier, string accessToken, string requestUrl)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                var payload = new
+                {
+                    LoanDocuments = new List<LoanDocument> { document },
+                    SellerName = sellerName,
+                    TransactionIdentifier = transactionIdentifier,
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+                {
+                    Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json")
+                };
+
+                try
+                {
+                    var response = await httpClient.SendAsync(request);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = JsonConvert.DeserializeObject<UploadResponse>(responseContent)?.Results?.FirstOrDefault();
+                        if (result != null)
+                            return result;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while posting loan documents data to RetrySingleDocumentAsync");
+                }
+
+                await Task.Delay(GetRetryDelay(attempt));
+            }
+
+            return new DocumentUploadResult
+            {
+                LoanID = ((dynamic)document).LoanID,
+                Status = "failure",
+                ImportMessage = "Retry failed after max attempts"
+            };
         }
     }
 }
