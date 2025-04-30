@@ -12,140 +12,126 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
     {
         private readonly ILogger<LauramacService> _logger;
         private readonly HttpClient _httpClient;
+
         public LauramacService(ILogger<LauramacService> logger, HttpClient httpClient)
         {
             _logger = logger;
             _httpClient = httpClient;
         }
+
         public async Task<ImportResponse> SendLoanDataAsync(LoanRequest loanRequest)
         {
             try
             {
-                var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
-                var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
-                var lauraMacBaseURL = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
-                var lauraMacTokenURL = Environment.GetEnvironmentVariable("LauraMacTokenURL");
-                var fullUrl = $"{lauraMacBaseURL}{lauraMacTokenURL}";
-                string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullUrl);
+                string username = Environment.GetEnvironmentVariable("LauraMacUsername");
+                string password = Environment.GetEnvironmentVariable("LauraMacPassword");
+                string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
+                string tokenUrl = Environment.GetEnvironmentVariable("LauraMacTokenURL");
 
-                if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
-                {
+                string fullTokenUrl = $"{baseUrl}{tokenUrl}";
+                string accessToken = await GetLauramacAccessToken(username, password, fullTokenUrl);
+
+                if (string.IsNullOrWhiteSpace(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
                     return new ImportResponse { Status = accessToken };
-                }
 
-                var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
-                var requestUrl = $"{lauraMacBaseURL}{importLoansUrl}";
-                _logger.LogInformation("Request URL: {RequestUrl}", requestUrl);
+                string importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
+                string requestUrl = $"{baseUrl}{importLoansUrl}";
+
+                _logger.LogInformation("Sending loan data to URL: {RequestUrl}", requestUrl);
+
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                string loanJson = JsonConvert.SerializeObject(loanRequest);
-                var content = new StringContent(loanJson, Encoding.UTF8, "application/json");
+                string jsonBody = JsonConvert.SerializeObject(loanRequest);
+                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(requestUrl, content);
 
+                var responseContent = await response.Content.ReadAsStringAsync();
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var importSuccessResponse = JsonConvert.DeserializeObject<ImportResponse>(responseContent);
-                    if (importSuccessResponse != null)
-                    {
-                        importSuccessResponse.Status = "Success";
-                        return importSuccessResponse;
-                    }
+                    var result = JsonConvert.DeserializeObject<ImportResponse>(responseContent);
+                    result.Status = "Success";
+                    return result;
                 }
 
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Error response received: {ErrorContent}", errorContent);
-                var importErrorResponse = JsonConvert.DeserializeObject<ImportResponse>(errorContent);
-
-                if (importErrorResponse != null)
-                {
-                    importErrorResponse.Status = "Failure";
-                    return importErrorResponse;
-                }
-
-                return new ImportResponse { Status = "Failure" };
-
+                _logger.LogError("Loan import failed. Response: {ResponseContent}", responseContent);
+                var errorResponse = JsonConvert.DeserializeObject<ImportResponse>(responseContent);
+                errorResponse.Status = "Failure";
+                return errorResponse ?? new ImportResponse { Status = "Failure" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while posting loan data to SendLoanDataAsync");
+                _logger.LogError(ex, "Exception in SendLoanDataAsync");
                 return new ImportResponse { Status = $"Exception: {ex.Message}" };
             }
         }
+
         public async Task<string> GetLauramacAccessToken(string username, string password, string fullUrl)
         {
             try
             {
-                var lauraMacBaseURL = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
-                var importLoansUrl = Environment.GetEnvironmentVariable("LauraMacImportLoansUrl");
-                var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
-                var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
-
-                var body = new
+                var requestBody = new
                 {
-                    username = lauraMacUserName,
-                    password = lauraMacPassword
+                    username,
+                    password
                 };
 
-                string jsonBody = JsonConvert.SerializeObject(body);
-                HttpContent content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+                string jsonBody = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await _httpClient.PostAsync(fullUrl, content);
+                var response = await _httpClient.PostAsync(fullUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    dynamic obj = JsonConvert.DeserializeObject(json);
+                    dynamic obj = JsonConvert.DeserializeObject(responseContent);
                     return obj?.access_token;
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Lauramac token request failed. Status: {StatusCode}, Content: {ErrorContent}", response.StatusCode, errorContent);
-                    return $"Error: {response.StatusCode}, Content: {errorContent}";
-                }
+
+                _logger.LogError("Token request failed. Status: {StatusCode}, Content: {Content}", response.StatusCode, responseContent);
+                return $"Error: {response.StatusCode}, Content: {responseContent}";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception occurred while requesting Lauramac access token.");
+                _logger.LogError(ex, "Exception in GetLauramacAccessToken");
                 return $"Exception: {ex.Message}";
             }
         }
-        public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest)
+
+        public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(LoanDocumentRequest request)
         {
             const int MaxRetries = 3;
             var finalResults = new List<DocumentUploadResult>();
-            var remainingDocuments = loanDocumentRequest.LoanDocuments;
+            var remainingDocs = request.LoanDocuments;
 
             try
             {
-                var lauraMacUserName = Environment.GetEnvironmentVariable("LauraMacUsername");
-                var lauraMacPassword = Environment.GetEnvironmentVariable("LauraMacPassword");
-                var lauraMacBaseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
-                var lauraMacTokenUrl = Environment.GetEnvironmentVariable("LauraMacTokenURL");
-                var fullTokenUrl = $"{lauraMacBaseUrl}{lauraMacTokenUrl}";
+                string username = Environment.GetEnvironmentVariable("LauraMacUsername");
+                string password = Environment.GetEnvironmentVariable("LauraMacPassword");
+                string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
+                string tokenUrl = Environment.GetEnvironmentVariable("LauraMacTokenURL");
 
-                string accessToken = await GetLauramacAccessToken(lauraMacUserName, lauraMacPassword, fullTokenUrl);
+                string fullTokenUrl = $"{baseUrl}{tokenUrl}";
+                string accessToken = await GetLauramacAccessToken(username, password, fullTokenUrl);
 
-                if (string.IsNullOrEmpty(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
-                {
+                if (string.IsNullOrWhiteSpace(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
                     return finalResults;
-                }
 
-                var importLoanDocumentsUrl = Environment.GetEnvironmentVariable("LauraMacImportLoanDocumentsUrl");
-                var requestUrl = $"{lauraMacBaseUrl}{importLoanDocumentsUrl}";
-                _logger.LogInformation("Request URL: {RequestUrl}", requestUrl);
+                string importUrl = Environment.GetEnvironmentVariable("LauraMacImportLoanDocumentsUrl");
+                string requestUrl = $"{baseUrl}{importUrl}";
+
+                _logger.LogInformation("Sending loan documents to URL: {RequestUrl}", requestUrl);
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                string loanJson = JsonConvert.SerializeObject(loanDocumentRequest);
-                var content = new StringContent(loanJson, Encoding.UTF8, "application/json");
+                string jsonBody = JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
-                HttpResponseMessage? response = null;
-
-                for (int attempt = 1; attempt <= MaxRetries && remainingDocuments.Count > 0; attempt++)
+                for (int attempt = 1; attempt <= MaxRetries && remainingDocs.Count > 0; attempt++)
                 {
+                    HttpResponseMessage response = null;
+
                     try
                     {
                         response = await _httpClient.PostAsync(requestUrl, content);
@@ -165,7 +151,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                             var uploadResponse = JsonConvert.DeserializeObject<UploadResponse>(responseContent);
                             finalResults.AddRange(uploadResponse.Results);
 
-                            remainingDocuments = remainingDocuments
+                            remainingDocs = remainingDocs
                                 .Where(doc =>
                                 {
                                     var loanId = ((dynamic)doc).LoanID;
@@ -173,45 +159,45 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                                 })
                                 .ToList();
                         }
-                        else
+                        else if (attempt == MaxRetries)
                         {
-                            if (attempt == MaxRetries)
+                            foreach (var doc in remainingDocs)
                             {
-                                foreach (var doc in remainingDocuments)
-                                {
-                                    var result = await RetrySingleDocumentAsync(_httpClient, doc, MaxRetries, loanDocumentRequest.SellerName, loanDocumentRequest.TransactionIdentifier, accessToken, requestUrl);
-                                    finalResults.Add(result);
-                                }
-
-                                break;
+                                var result = await RetrySingleDocumentAsync(doc, request.SellerName, request.TransactionIdentifier, accessToken, requestUrl);
+                                finalResults.Add(result);
                             }
 
-                            await Task.Delay(GetRetryDelay(attempt));
+                            break;
                         }
+
+                        await Task.Delay(GetRetryDelay(attempt));
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while posting loan documents data to SendLoanDocumentDataAsync");
+                _logger.LogError(ex, "Exception in SendLoanDocumentDataAsync");
             }
 
             return finalResults;
         }
-        private int GetRetryDelay(int attempt)
-        {
-            return (int)(Math.Pow(2, attempt) * 500 + new Random().Next(100));
-        }
 
-        private async Task<DocumentUploadResult> RetrySingleDocumentAsync(HttpClient httpClient, LoanDocument document, int maxRetries, string sellerName, string transactionIdentifier, string accessToken, string requestUrl)
+        private async Task<DocumentUploadResult> RetrySingleDocumentAsync(
+            LoanDocument document,
+            string sellerName,
+            string transactionIdentifier,
+            string accessToken,
+            string requestUrl)
         {
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            const int MaxRetries = 3;
+
+            for (int attempt = 1; attempt <= MaxRetries; attempt++)
             {
                 var payload = new
                 {
                     LoanDocuments = new List<LoanDocument> { document },
                     SellerName = sellerName,
-                    TransactionIdentifier = transactionIdentifier,
+                    TransactionIdentifier = transactionIdentifier
                 };
 
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
@@ -221,7 +207,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
 
                 try
                 {
-                    var response = await httpClient.SendAsync(request);
+                    var response = await _httpClient.SendAsync(request);
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
@@ -233,7 +219,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error while posting loan documents data to RetrySingleDocumentAsync");
+                    _logger.LogError(ex, "Exception in RetrySingleDocumentAsync");
                 }
 
                 await Task.Delay(GetRetryDelay(attempt));
@@ -245,6 +231,11 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 Status = "failure",
                 ImportMessage = "Retry failed after max attempts"
             };
+        }
+
+        private int GetRetryDelay(int attempt)
+        {
+            return (int)(Math.Pow(2, attempt) * 500 + new Random().Next(100));
         }
     }
 }
