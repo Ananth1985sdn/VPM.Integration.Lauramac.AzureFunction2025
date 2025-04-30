@@ -126,7 +126,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             });
             var authToken = Environment.GetEnvironmentVariable("EncompassAuthToken");       
 
-            var expectedContent = await ReadTestDataAsync(@"TestData/SuccessLoanData.json");
+            var expectedContent = await ReadTestDataAsync(@"TestData/Response/SuccessLoanData.json");
 
             var mockLoanDataService = new Mock<ILoanDataService>();
             mockLoanDataService.Setup(service => service.GetLoanData(
@@ -152,7 +152,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
                 ["EncompassAuthToken"] = "0004R2RHhOxb7g64wHTgFwmNbOgv"
             });
             var authToken = Environment.GetEnvironmentVariable("EncompassAuthToken");
-            var expectedContent = await ReadTestDataAsync(@"TestData/FailureLoanData.json");
+            var expectedContent = await ReadTestDataAsync(@"TestData/Response/FailureLoanData.json");
 
             var mockLoanDataService = new Mock<ILoanDataService>();
             mockLoanDataService.Setup(service => service.GetLoanData(
@@ -203,7 +203,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         [Fact]
         public async Task TestCase_SendLoanDataAsyncToLauraMac()
         {
-            var mockJson = await ReadTestDataAsync(@"TestData/LauramacImportLoanSuccessResponse.json");
+            var mockJson = await ReadTestDataAsync(@"TestData/Response/LauramacImportLoanSuccessResponse.json");
             var expectedResponse = JsonConvert.DeserializeObject<ImportResponse>(mockJson);
 
             var mockLauramacService = new Mock<ILauramacService>();
@@ -212,7 +212,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
             var lauramacService = BuildService(mockLauramacService.Object);
 
-            var requestBodyJson = await ReadTestDataAsync(@"TestData/LauramacImportLoansRequest.json");
+            var requestBodyJson = await ReadTestDataAsync(@"TestData/Request/LauramacImportLoansRequest.json");
             var request = JsonConvert.DeserializeObject<LoanRequest>(requestBodyJson);
 
             var actualResponse = await lauramacService.SendLoanDataAsync(request);
@@ -224,7 +224,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
         [Fact]
         public async Task TestCase_SendLoanDocumentDataAsyncToLauraMac()
         {
-            var mockJson = await ReadTestDataAsync(@"TestData/LauramacImportLoanDocumentsSuccessResponse.json");
+            var mockJson = await ReadTestDataAsync(@"TestData/Response/LauramacImportLoanDocumentsSuccessResponse.json");
             var expectedResponse = JsonConvert.DeserializeObject<List<DocumentUploadResult>>(mockJson);
 
             var mockLauramacService = new Mock<ILauramacService>();
@@ -233,7 +233,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
             var lauramacService = BuildService(mockLauramacService.Object);
 
-            var requestBodyJson = await ReadTestDataAsync(@"TestData/LauramacImportLoanDocumentsRequest.json");
+            var requestBodyJson = await ReadTestDataAsync(@"TestData/Request/LauramacImportLoanDocumentsRequest.json");
             var request = JsonConvert.DeserializeObject<LoanDocumentRequest>(requestBodyJson);
 
             var actualResponse = await lauramacService.SendLoanDocumentDataAsync(request);

@@ -25,22 +25,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestData\FailureLoanData.json">
+    <None Update="TestData\Response\FailureLoanData.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\LauramacImportLoanDocumentsRequest.json">
+    <None Update="TestData\Request\LauramacImportLoanDocumentsRequest.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\LauramacImportLoanDocumentsSuccessResponse.json">
+    <None Update="TestData\Response\LauramacImportLoanDocumentsSuccessResponse.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\LauramacImportLoansRequest.json">
+    <None Update="TestData\Request\LauramacImportLoansRequest.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\LauramacImportLoanSuccessResponse.json">
+    <None Update="TestData\Response\LauramacImportLoanSuccessResponse.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\SuccessLoanData.json">
+    <None Update="TestData\Response\SuccessLoanData.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
