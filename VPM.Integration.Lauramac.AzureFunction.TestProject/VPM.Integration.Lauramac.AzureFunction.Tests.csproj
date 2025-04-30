@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestData\Response\FailureLoanData.json">
+    <None Update="TestData\Response\EncompassFailureLoanData.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\Request\LauramacImportLoanDocumentsRequest.json">
@@ -40,7 +40,7 @@
     <None Update="TestData\Response\LauramacImportLoanSuccessResponse.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\Response\SuccessLoanData.json">
+    <None Update="TestData\Response\EncompassSuccessLoanData.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

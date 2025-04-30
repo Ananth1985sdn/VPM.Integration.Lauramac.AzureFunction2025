@@ -126,7 +126,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             });
             var authToken = Environment.GetEnvironmentVariable("EncompassAuthToken");       
 
-            var expectedContent = await ReadTestDataAsync(@"TestData/Response/SuccessLoanData.json");
+            var expectedContent = await ReadTestDataAsync(@"TestData/Response/EncompassSuccessLoanData.json");
 
             var mockLoanDataService = new Mock<ILoanDataService>();
             mockLoanDataService.Setup(service => service.GetLoanData(
@@ -152,7 +152,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
                 ["EncompassAuthToken"] = "0004R2RHhOxb7g64wHTgFwmNbOgv"
             });
             var authToken = Environment.GetEnvironmentVariable("EncompassAuthToken");
-            var expectedContent = await ReadTestDataAsync(@"TestData/Response/FailureLoanData.json");
+            var expectedContent = await ReadTestDataAsync(@"TestData/Response/EncompassFailureLoanData.json");
 
             var mockLoanDataService = new Mock<ILoanDataService>();
             mockLoanDataService.Setup(service => service.GetLoanData(

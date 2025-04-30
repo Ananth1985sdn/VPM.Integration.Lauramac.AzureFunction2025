@@ -43,7 +43,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Tests
             var realResult = await realService.GetLoanData(EncompassPipelineUrl, content, accessToken);
             var realLoanResponse = JsonConvert.DeserializeObject<List<Loan>>(realResult);
 
-            var expectedMockContent = await File.ReadAllTextAsync(@"TestData/Response/SuccessLoanData.json", Encoding.UTF8);
+            var expectedMockContent = await File.ReadAllTextAsync(@"TestData/Response/EncompassSuccessLoanData.json", Encoding.UTF8);
 
             var mockLoanDataService = new Mock<ILoanDataService>();
             mockLoanDataService
