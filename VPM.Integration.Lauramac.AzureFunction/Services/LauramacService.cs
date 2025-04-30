@@ -163,7 +163,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                         {
                             foreach (var doc in remainingDocs)
                             {
-                                var result = await RetrySingleDocumentAsync(doc, request.SellerName, request.TransactionIdentifier, accessToken, requestUrl);
+                                var result = await RetrySingleDocumentAsync(doc, request.SellerName, request.TransactionIdentifier, requestUrl);
                                 finalResults.Add(result);
                             }
 
@@ -186,7 +186,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             LoanDocument document,
             string sellerName,
             string transactionIdentifier,
-            string accessToken,
             string requestUrl)
         {
             const int MaxRetries = 3;

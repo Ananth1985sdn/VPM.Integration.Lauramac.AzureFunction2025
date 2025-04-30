@@ -221,6 +221,27 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
         }
 
+        [Fact]
+        public async Task TestCase_SendLoanDocumentDataAsyncToLauraMac()
+        {
+            var mockJson = await ReadTestDataAsync(@"TestData/LauramacImportLoanDocumentsSuccessResponse.json");
+            var expectedResponse = JsonConvert.DeserializeObject<List<DocumentUploadResult>>(mockJson);
+
+            var mockLauramacService = new Mock<ILauramacService>();
+            mockLauramacService.Setup(service => service.SendLoanDocumentDataAsync(
+                It.IsAny<LoanDocumentRequest>())).ReturnsAsync(expectedResponse);
+
+            var lauramacService = BuildService(mockLauramacService.Object);
+
+            var requestBodyJson = await ReadTestDataAsync(@"TestData/LauramacImportLoanDocumentsRequest.json");
+            var request = JsonConvert.DeserializeObject<LoanDocumentRequest>(requestBodyJson);
+
+            var actualResponse = await lauramacService.SendLoanDocumentDataAsync(request);
+
+            Assert.Equal(expectedResponse[0].LoanID, actualResponse[0].LoanID);
+
+        }
+
         private static T BuildService<T>(T implementation) where T : class
         {
             var services = new ServiceCollection();
