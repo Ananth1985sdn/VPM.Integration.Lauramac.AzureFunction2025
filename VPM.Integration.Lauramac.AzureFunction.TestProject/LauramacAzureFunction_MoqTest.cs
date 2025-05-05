@@ -284,6 +284,27 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
             Assert.Equal(actualResponse.Status, "No valid loans to process.");
         }
 
+        [Fact]
+        public async Task TestCase_SendLoanDataAsyncWithSellerNameNullToLauraMac()
+        {
+            var mockJson = await ReadTestDataAsync(@"TestData/Response/LauramacImportLoanResponseSellerNameIsNull.json");
+            var expectedResponse = JsonConvert.DeserializeObject<ImportResponse>(mockJson);
+
+            var mockLauramacService = new Mock<ILauramacService>();
+            mockLauramacService.Setup(service => service.SendLoanDataAsync(
+                It.IsAny<LoanRequest>())).ReturnsAsync(expectedResponse);
+
+            var lauramacService = BuildService(mockLauramacService.Object);
+
+            var requestBodyJson = await ReadTestDataAsync(@"TestData/Request/LauramacImportLoansRequestSellerNameIsNull.json");
+            var request = JsonConvert.DeserializeObject<LoanRequest>(requestBodyJson);
+
+            var actualResponse = await lauramacService.SendLoanDataAsync(request);
+
+            Assert.Equal(expectedResponse.Status, actualResponse.Status);
+            Assert.Equal(actualResponse.Status, "SellerName is required.");
+        }
+
         private static T BuildService<T>(T implementation) where T : class
         {
             var services = new ServiceCollection();

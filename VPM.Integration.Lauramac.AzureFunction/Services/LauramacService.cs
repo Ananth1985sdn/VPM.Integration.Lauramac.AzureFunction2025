@@ -23,6 +23,10 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
+                if(string.IsNullOrEmpty(loanRequest.SellerName)) {
+                    return new ImportResponse { Status = "SellerName is required." };
+                }
+
                 loanRequest.Loans = loanRequest.Loans != null
                                     ? loanRequest.Loans.Where(loan => !string.IsNullOrWhiteSpace(loan.LoanID)).ToList()
                                     : new List<Models.Lauramac.Request.Loan>();
@@ -114,6 +118,10 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             var finalResults = new List<DocumentUploadResult>();
             var remainingDocs = request.LoanDocuments;
             
+            if (string.IsNullOrEmpty(request.SellerName)) {
+                return finalResults;
+            }
+
             request.LoanDocuments = request.LoanDocuments?
                 .Where(doc => !string.IsNullOrWhiteSpace(doc.LoanID) && !string.IsNullOrWhiteSpace(doc.Filename))
                 .ToList() ?? new List<LoanDocument>();

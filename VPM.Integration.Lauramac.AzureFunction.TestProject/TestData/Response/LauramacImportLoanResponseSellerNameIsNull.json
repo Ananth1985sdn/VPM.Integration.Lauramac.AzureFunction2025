@@ -1,0 +1,9 @@
+{
+  "Import Message": {
+    "Queued": 0,
+    "Ignored - Duplicate": 0,
+    "Error": 0
+  },
+  "Status": "SellerName is required.", //User Defined
+  "Loans": []
+}
