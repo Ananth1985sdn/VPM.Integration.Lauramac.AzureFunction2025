@@ -10,19 +10,19 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
     public class Loan
     {
         [JsonProperty("Foreign National")]
-        public string ForeignNational { get; set; }
+        public string? ForeignNational { get; set; }
 
         [JsonProperty("Zip")]
-        public string Zip { get; set; }
+        public string? Zip { get; set; }
 
         [JsonProperty("Borrower First Name")]
-        public string BorrowerFirstName { get; set; }
+        public string? BorrowerFirstName { get; set; }
 
         [JsonProperty("Address")]
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
         [JsonProperty("Loan Number")]
-        public string LoanNumber { get; set; }
+        public string? LoanNumber { get; set; }
 
         [JsonProperty("FICO")]
         public string? Fico { get; set; }

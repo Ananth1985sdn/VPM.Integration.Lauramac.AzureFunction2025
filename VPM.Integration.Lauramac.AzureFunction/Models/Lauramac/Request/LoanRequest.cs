@@ -13,12 +13,19 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
         public List<Loan> Loans { get; set; }
 
         [JsonProperty("Transaction Identifier")]
-        public string TransactionIdentifier { get; set; }
+        public string? TransactionIdentifier { get; set; }
 
         [JsonProperty("Seller Name")]
         public string SellerName { get; set; }
 
+        private string _overrideDuplicateLoans = "0";
+
         [JsonProperty("overrideDuplicateLoans")]
-        public string OverrideDuplicateLoans { get; set; }
+        public string OverrideDuplicateLoans
+        {
+            get => _overrideDuplicateLoans;
+            set => _overrideDuplicateLoans = string.IsNullOrWhiteSpace(value) ? "0" : value;
+        }
+    }
     }
 }
