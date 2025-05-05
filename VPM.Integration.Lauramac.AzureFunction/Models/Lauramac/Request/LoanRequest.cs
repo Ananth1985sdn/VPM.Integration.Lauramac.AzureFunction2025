@@ -27,5 +27,4 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
             set => _overrideDuplicateLoans = string.IsNullOrWhiteSpace(value) ? "0" : value;
         }
     }
-    }
 }
