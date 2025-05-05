@@ -242,6 +242,27 @@ namespace VPM.Integration.Lauramac.AzureFunction.TestProject
 
         }
 
+        [Fact]
+        public async Task TestCase_SendLoanDataAsyncWithLoanIdNullToLauraMac()
+        {
+            var mockJson = await ReadTestDataAsync(@"TestData/Response/LauramacImportLoanResponseLoanIdIsNull.json");
+            var expectedResponse = JsonConvert.DeserializeObject<ImportResponse>(mockJson);
+
+            var mockLauramacService = new Mock<ILauramacService>();
+            mockLauramacService.Setup(service => service.SendLoanDataAsync(
+                It.IsAny<LoanRequest>())).ReturnsAsync(expectedResponse);
+
+            var lauramacService = BuildService(mockLauramacService.Object);
+
+            var requestBodyJson = await ReadTestDataAsync(@"TestData/Request/LauramacImportLoansRequestLoanIdIsNull.json");
+            var request = JsonConvert.DeserializeObject<LoanRequest>(requestBodyJson);
+
+            var actualResponse = await lauramacService.SendLoanDataAsync(request);
+
+            Assert.Equal(expectedResponse.Status, actualResponse.Status);
+            Assert.Equal(actualResponse.Status, "No valid loans to process.");
+        }
+
         private static T BuildService<T>(T implementation) where T : class
         {
             var services = new ServiceCollection();

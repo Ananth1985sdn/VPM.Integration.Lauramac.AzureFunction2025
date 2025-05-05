@@ -23,6 +23,13 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
+                loanRequest.Loans = loanRequest.Loans != null
+                                    ? loanRequest.Loans.Where(loan => !string.IsNullOrWhiteSpace(loan.LoanID)).ToList()
+                                    : new List<Models.Lauramac.Request.Loan>();
+
+                if (loanRequest.Loans == null || !loanRequest.Loans.Any())
+                    return new ImportResponse { Status = "No valid loans to process." };
+
                 string username = Environment.GetEnvironmentVariable("LauraMacUsername");
                 string password = Environment.GetEnvironmentVariable("LauraMacPassword");
                 string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
