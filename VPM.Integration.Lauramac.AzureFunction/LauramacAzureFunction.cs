@@ -315,7 +315,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 },
                 new FilterTerm {
                     canonicalName = "Fields.CX.DUEDILIGENCE_START_DT",
-                    value = "04/11/2025",
+                    value = "04/11/2025", //DateTime.UtcNow.ToString("MM/dd/yyyy"),
                     matchType = "Equals",
                     precision = "Day"
                 },
