@@ -9,7 +9,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
     public class LoanDocument
     {
         public string LoanID { get; set; }
-        public string? Filename { get; set; }
+        public string Filename { get; set; }
         public bool? isExternalDocument { get; set; }
         public string? ExternalDocumentLink { get; set; }
         public string? ExternalFileId { get; set; }

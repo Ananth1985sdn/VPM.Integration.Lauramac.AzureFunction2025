@@ -30,6 +30,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 if (loanRequest.Loans == null || !loanRequest.Loans.Any())
                     return new ImportResponse { Status = "No valid loans to process." };
 
+
+
                 string username = Environment.GetEnvironmentVariable("LauraMacUsername");
                 string password = Environment.GetEnvironmentVariable("LauraMacPassword");
                 string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
@@ -111,9 +113,19 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             const int MaxRetries = 3;
             var finalResults = new List<DocumentUploadResult>();
             var remainingDocs = request.LoanDocuments;
+            
+            request.LoanDocuments = request.LoanDocuments?
+                .Where(doc => !string.IsNullOrWhiteSpace(doc.LoanID) && !string.IsNullOrWhiteSpace(doc.Filename))
+                .ToList() ?? new List<LoanDocument>();
 
+            if (!request.LoanDocuments.Any())
+            {
+                _logger.LogWarning("No valid loan documents to process.");
+                return finalResults;
+            }
             try
             {
+
                 string username = Environment.GetEnvironmentVariable("LauraMacUsername");
                 string password = Environment.GetEnvironmentVariable("LauraMacPassword");
                 string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
