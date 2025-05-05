@@ -4,7 +4,7 @@
     "Ignored - Duplicate": 0,
     "Error": 0
   },
-  "Status": "Failed",
+  "Status": "Success",//User Defined
   "Loans": [
     {
       "LoanID": "66b6fc88-f675-4cdd-b78a-214453cde1e9",
