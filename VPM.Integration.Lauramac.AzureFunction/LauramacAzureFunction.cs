@@ -260,11 +260,9 @@ namespace VPM.Integration.Lauramac.AzureFunction
                                         AmortizationType = loan.Fields.Field608,
                                         PropType = loan.Fields.Field1401,
                                         Occupancy = loan.Fields.OccupancyStatus,
-
                                         BorrowerFirstName = loan.Fields.Field4000,
                                         BorrowerLastName = loan.Fields.Field4002,
                                         BorrowerSSN = loan.Fields.Field65,
-
                                         Address = loan.Fields.Address1,
                                         City = loan.Fields.City,
                                         State = loan.Fields.State,
