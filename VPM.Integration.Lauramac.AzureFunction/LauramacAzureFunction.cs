@@ -110,6 +110,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             var baseUrl = Environment.GetEnvironmentVariable("EncompassApiBaseURL");
             var pipelineUrl = Environment.GetEnvironmentVariable("EncompassLoanPipelineURL");
             var documentPackage = Environment.GetEnvironmentVariable("DocumentPackageName");
+            var azureDocumentPath = Environment.GetEnvironmentVariable("AzureDocumentPath");
             string sellerName = string.Empty;
             var requestUrl = $"{baseUrl?.TrimEnd('/')}{pipelineUrl}";
             var requestBody = RequestBody();
@@ -273,7 +274,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                                     loanDoumentRequest.LoanDocuments.Add(new LoanDocument
                                     {
                                         LoanID = loan.LoanId,
-                                        Filename = $"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                                        Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",//$"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
                                         isExternalDocument = false,
                                         ExternalDocumentLink = null,
                                         ExternalFileId = null,

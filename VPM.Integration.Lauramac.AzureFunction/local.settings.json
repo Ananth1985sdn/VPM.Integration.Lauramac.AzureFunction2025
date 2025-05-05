@@ -16,7 +16,7 @@
     "EncompassGetDocumentURL": "/encompass/v3/loans/{loanId}/attachmentDownloadUrl",
     "DocumentPackageName": "Vista Point - Due Diligence Package",
     "https": null,
-    
+
     "LauraMacApiBaseURL": "https://app.uat.lauramac.io/apis",
     "LauraMacTokenURL": "/client/authorization",
     "LauraMacImportLoansUrl": "/import/loans",
@@ -32,6 +32,7 @@
     "EmailSettings:SmtpPort": "587",
     "EmailSettings:Username": "smtp_user",
     "EmailSettings:Password": "smtp_password",
-    "EmailSettings:EnableSsl": "true"
+    "EmailSettings:EnableSsl": "true",
+    "AzureDocumentPath": "D/local/temp/"
   }
 }
