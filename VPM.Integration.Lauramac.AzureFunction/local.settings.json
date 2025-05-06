@@ -33,6 +33,7 @@
     "EmailSettings:Username": "smtp_user",
     "EmailSettings:Password": "smtp_password",
     "EmailSettings:EnableSsl": "true",
-    "AzureDocumentPath": "D/local/temp/"
+    "AzureDocumentPath": "D/local/temp/",
+    "SellerName": "Clarifii"
   }
 }

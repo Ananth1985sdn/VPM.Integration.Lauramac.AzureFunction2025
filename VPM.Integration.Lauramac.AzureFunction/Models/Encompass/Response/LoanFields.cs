@@ -95,5 +95,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Response
         public string FieldsCXPURCHASEPRICE { get; set; }
         [JsonProperty("Fields.CX.NAME_DDPROVIDER")]
         public string FieldsCXNAME_DDPROVIDER { get; set; }
+
+        [JsonProperty("Fields.420")]
+        public string Fields420 { get; set; }
     }
 }

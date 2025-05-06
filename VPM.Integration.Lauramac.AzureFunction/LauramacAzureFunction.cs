@@ -20,7 +20,10 @@ namespace VPM.Integration.Lauramac.AzureFunction
         private readonly ILoanDataService _loanDataService;
         private readonly ILauramacService _lauramacService;
         private LoanRequest loanRequest;
+        private LoanRequest secondLienLoanRequest;
         private LoanDocumentRequest loanDoumentRequest;
+        private LoanDocumentRequest secondLienLoanDoumentRequest;
+
         public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService, ILauramacService lauramacService)
         {
             _logger = loggerFactory.CreateLogger<LauramacAzureFunction>();
@@ -31,8 +34,19 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 Loans = new List<LauramacLoan>(),
                 TransactionIdentifier = "",
                 OverrideDuplicateLoans = "0"
-            };
+            };                
             loanDoumentRequest = new LoanDocumentRequest
+            {
+                LoanDocuments = new List<LoanDocument>(),
+                TransactionIdentifier = "",
+            };
+            secondLienLoanRequest = new LoanRequest
+            {
+                Loans = new List<LauramacLoan>(),
+                TransactionIdentifier = "",
+                OverrideDuplicateLoans = "0"
+            };
+            secondLienLoanDoumentRequest = new LoanDocumentRequest
             {
                 LoanDocuments = new List<LoanDocument>(),
                 TransactionIdentifier = "",
@@ -44,45 +58,74 @@ namespace VPM.Integration.Lauramac.AzureFunction
         {
             try
             {
-                _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+                _logger.LogInformation("Timer trigger function executed at: {Time}", DateTime.Now);
                 string token = await GetEncompassAccessTokenAsync();
 
-                if (myTimer.ScheduleStatus is not null)
+                if (string.IsNullOrWhiteSpace(token) || token.Contains("Error") || token.Contains("Exception"))
                 {
-                    if (!string.IsNullOrEmpty(token) && !token.Contains("Error") && !token.Contains("Exception"))
-                    {
-                        await CallLoanPipelineApiAsync(token);
-                        if (loanRequest.Loans.Count == 0)
+                    _logger.LogError("Failed to retrieve Encompass access token: {Token}", token);
+                    return;
+                }
+
+                await CallLoanPipelineApiAsync(token);
+
+                string sellerName = Environment.GetEnvironmentVariable("SellerName");
+
+                switch (sellerName)
+                {
+                    case "Canopy":
+                        await ProcessLoanSetAsync(loanRequest, loanDoumentRequest, "Canopy");
+                        break;
+
+                    case "Clarifii":
+                        await ProcessLoanSetAsync(loanRequest, loanDoumentRequest, "Clarifii First Lie");
+
+                        if (secondLienLoanRequest?.Loans?.Count > 0)
                         {
-                            _logger.LogInformation("No loans found to process.");
-                            return;
-                        }
-                        ImportResponse response = await _lauramacService.SendLoanDataAsync(loanRequest);
-                        _logger.LogInformation("Lauramac Response: {Response}", response);
-                        if(response.Status == "Success")
-                        {
-                            _logger.LogInformation("Loan data sent successfully.");
-                            var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
-                            _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
+                            await ProcessLoanSetAsync(secondLienLoanRequest, secondLienLoanDoumentRequest, "Clarifii Second Lie");
                         }
                         else
                         {
-                            _logger.LogError("Failed to send loan data: {Message}", response.Status);
+                            _logger.LogInformation("No second lien loans found to process.");
                         }
-                        
-                    }
-                    else
-                    {
-                        _logger.LogError($"Failed to retrieve Encompass access token.{token}");
-                    }
-                    _logger.LogInformation($"Next timer schedule at: {myTimer.ScheduleStatus.Next}");
+                        break;
+
+                    default:
+                        _logger.LogWarning("Unknown seller name: {Seller}", sellerName);
+                        break;
                 }
+
+                _logger.LogInformation("Next timer schedule at: {Next}", myTimer.ScheduleStatus?.Next);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"An error occurred: {ex.Message}");
+                _logger.LogError(ex, "An unexpected error occurred.");
             }
         }
+
+        private async Task ProcessLoanSetAsync(LoanRequest loanReq, LoanDocumentRequest docReq, string context)
+        {
+            if (loanReq?.Loans == null || loanReq.Loans.Count == 0)
+            {
+                _logger.LogInformation("No loans found to process for {Context}.", context);
+                return;
+            }
+
+            ImportResponse response = await _lauramacService.SendLoanDataAsync(loanReq);
+            _logger.LogInformation("{Context} Loan Data Response: {Response}", context, response);
+
+            if (response.Status == "Success")
+            {
+                _logger.LogInformation("{Context} loan data sent successfully.", context);
+                var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(docReq);
+                _logger.LogInformation("{Context} Document Response: {Response}", context, documentResponse);
+            }
+            else
+            {
+                _logger.LogError("{Context} failed to send loan data: {Status}", context, response.Status);
+            }
+        }
+
 
         public async Task<string> GetEncompassAccessTokenAsync()
         {
@@ -149,6 +192,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                     var loans = JsonConvert.DeserializeObject<List<EncompassLoan>>(response);
                     _logger.LogInformation("Number of Loans: {LoanCount}", loans?.Count ?? 0);
 
+
                     var endpointTemplate = Environment.GetEnvironmentVariable("EncompassGetDocumentsURL");
                     var canopyTransactionIdentifier = Environment.GetEnvironmentVariable("CanopyTransactionIdentifier");
                     DateTime currentDateTime = DateTime.Now;
@@ -162,6 +206,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         sellerName = string.IsNullOrEmpty(sellerName)
                             ? loan.Fields.FieldsCXNAME_DDPROVIDER
                             : sellerName;
+                        string lienPosition = loan.Fields.Fields420;
 
                         _logger.LogInformation(
                             "Loan ID: {LoanId}, Loan Number: {LoanNumber}, Amount: {LoanAmount}",
@@ -269,25 +314,63 @@ namespace VPM.Integration.Lauramac.AzureFunction
                                         State = loan.Fields.State,
                                         Zip = loan.Fields.Field15
                                     };
-
-                                    loanRequest.Loans.Add(lauramacLoan);
-                                    loanDoumentRequest.LoanDocuments.Add(new LoanDocument
+                                    if (sellerName=="Clarifii" && lienPosition == "First Lie")
                                     {
-                                        LoanID = loan.LoanId,
-                                        Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",//$"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
-                                        isExternalDocument = false,
-                                        ExternalDocumentLink = null,
-                                        ExternalFileId = null,
-                                        ExternalRequestId = null
-                                    });
-                                    break;
+                                        loanRequest.Loans.Add(lauramacLoan);
+                                        loanDoumentRequest.LoanDocuments.Add(new LoanDocument
+                                        {
+                                            LoanID = loan.LoanId,
+                                            Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",//$"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                                            isExternalDocument = false,
+                                            ExternalDocumentLink = null,
+                                            ExternalFileId = null,
+                                            ExternalRequestId = null
+                                        });
+                                    }
+                                    else if (sellerName == "Clarifii" &&  lienPosition == "Second Lie")
+                                    {
+                                        secondLienLoanRequest.Loans.Add(lauramacLoan);
+                                        secondLienLoanDoumentRequest.LoanDocuments.Add(new LoanDocument
+                                        {
+                                            LoanID = loan.LoanId,
+                                            Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",//$"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                                            isExternalDocument = false,
+                                            ExternalDocumentLink = null,
+                                            ExternalFileId = null,
+                                            ExternalRequestId = null
+                                        });
+                                    }
+                                    else
+                                    {
+                                        loanRequest.Loans.Add(lauramacLoan);
+                                        loanDoumentRequest.LoanDocuments.Add(new LoanDocument
+                                        {
+                                            LoanID = loan.LoanId,
+                                            Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",//$"D:/local/temp/{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                                            isExternalDocument = false,
+                                            ExternalDocumentLink = null,
+                                            ExternalFileId = null,
+                                            ExternalRequestId = null
+                                        });
+                                    }
+                                        break;
                                 }
                             }
                         }
                     }
-
-                    loanRequest.SellerName = sellerName;
-                    loanDoumentRequest.SellerName = sellerName;
+                    if (sellerName == "Clarifii")
+                    {
+                        loanRequest.SellerName = sellerName;
+                        loanDoumentRequest.SellerName = sellerName;
+                        secondLienLoanRequest.SellerName = sellerName;
+                        secondLienLoanDoumentRequest.SellerName = sellerName;
+                    }
+                    else
+                    {
+                        loanRequest.SellerName = sellerName;
+                        loanDoumentRequest.SellerName = sellerName;
+                    }
+                   
                 }
                 catch (JsonException ex)
                 {
@@ -299,6 +382,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
 
         private static Object RequestBody()
         {
+            var sellerName = Environment.GetEnvironmentVariable("SellerName");
             var filterTerms = new List<FilterTerm>
             {
                 new FilterTerm {
@@ -321,7 +405,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 },
                 new FilterTerm {
                     canonicalName = "Fields.CX.NAME_DDPROVIDER",
-                    value = "Canopy",
+                    value = sellerName,
                     matchType = "Exact",
                     include = true
                 }
@@ -335,7 +419,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                     "Loan.Address1", "Loan.City", "Loan.State", "Fields.15", "Fields.1041", "Loan.OccupancyStatus",
                     "Fields.1401", "Fields.CX.VP.DOC.TYPE", "Fields.4000", "Fields.4002", "Fields.CX.CREDITSCORE",
                     "Fields.325", "Fields.3", "Fields.742", "Fields.CX.VP.BUSINESS.PURPOSE", "Fields.1550",
-                    "Fields.675", "Fields.QM.X23", "Fields.QM.X25", "Fields.2278", "Fields.65","Fields.CX.PURCHASEPRICE","Fields.1550","Fields.356","Fields.CX.NAME_DDPROVIDER"
+                    "Fields.675", "Fields.QM.X23", "Fields.QM.X25", "Fields.2278", "Fields.65","Fields.CX.PURCHASEPRICE","Fields.1550","Fields.356","Fields.CX.NAME_DDPROVIDER","Fields.420"
                 },
                 filter = new
                 {
