@@ -11,6 +11,8 @@ using EncompassLoan = VPM.Integration.Lauramac.AzureFunction.Models.Encompass.Re
 using LauramacLoan = VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request.Loan;
 using Newtonsoft.Json.Linq;
 using VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 namespace VPM.Integration.Lauramac.AzureFunction
 {
@@ -20,7 +22,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
         private readonly ILoanDataService _loanDataService;
         private readonly ILauramacService _lauramacService;
         private LoanRequest loanRequest;
-        private LoanDocumentRequest loanDoumentRequest;
+        private DocumentUploadRequest documentUploadRequest;
         public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService, ILauramacService lauramacService)
         {
             _logger = loggerFactory.CreateLogger<LauramacAzureFunction>();
@@ -32,10 +34,11 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 TransactionIdentifier = "",
                 OverrideDuplicateLoans = "0"
             };
-            loanDoumentRequest = new LoanDocumentRequest
+            documentUploadRequest = new DocumentUploadRequest
             {
-                LoanDocuments = new List<LoanDocument>(),
-                TransactionIdentifier = "",
+                File = "",
+                UserName = "",
+                LoanDocumentRequest = new LoanDocumentRequest(),
             };
         }
 
@@ -62,7 +65,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         if(response.Status == "Success")
                         {
                             _logger.LogInformation("Loan data sent successfully.");
-                            var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(loanDoumentRequest);
+                            var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(documentUploadRequest);
                             _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
                         }
                         else
@@ -131,7 +134,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             string transactionIdentifier = canopyTransactionIdentifier.Replace("{transactionId}", transactionId);
 
             loanRequest.TransactionIdentifier = transactionIdentifier;
-            loanDoumentRequest.TransactionIdentifier = transactionIdentifier;
+            documentUploadRequest.LoanDocumentRequest.TransactionIdentifier = transactionIdentifier;
 
             foreach (var loan in loans ?? Enumerable.Empty<EncompassLoan>())
             {
@@ -175,7 +178,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             }
 
             loanRequest.SellerName = sellerName;
-            loanDoumentRequest.SellerName = sellerName;
+            documentUploadRequest.LoanDocumentRequest.SellerName = sellerName;
         }
 
         private bool IsValidResponse(string response, out JToken parsed)
@@ -235,7 +238,17 @@ namespace VPM.Integration.Lauramac.AzureFunction
             };
 
             loanRequest.Loans.Add(lauramacLoan);
-            loanDoumentRequest.LoanDocuments.Add(new LoanDocument
+
+            //var containerClient = new BlobContainerClient("YourConnectionString", "YourContainerName");
+            //var blobClient = containerClient.GetBlobClient(azureDocumentPath);
+            //using var memoryStream = new MemoryStream();
+            //blobClient.DownloadToAsync(memoryStream);
+            //byte[] fileBytes = memoryStream.ToArray();
+            //documentUploadRequest.File = Convert.ToBase64String(fileBytes);
+            byte[] fileBytes = File.ReadAllBytes($"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf");
+            documentUploadRequest.File = Convert.ToBase64String(fileBytes);
+
+            documentUploadRequest.LoanDocumentRequest.LoanDocuments.Add(new LoanDocument
             {
                 LoanID = loan.LoanId,
                 Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",

@@ -17,5 +17,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
 
         [JsonProperty("Seller Name")]
         public string SellerName { get; set; }
+
     }
 }

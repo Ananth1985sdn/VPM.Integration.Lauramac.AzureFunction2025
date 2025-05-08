@@ -189,20 +189,32 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 var fileName = $"{loanId}_{lastName}_shippingfiles.pdf";
 
                 #if DEBUG
-                var downloadsPath = Path.Combine("D:/local/", "temp");
+                        var downloadsPath = Path.Combine("D:/local/", "temp");
+                        if (!Directory.Exists(downloadsPath))
+                        {
+                            Directory.CreateDirectory(downloadsPath);
+                        }
+
+                        var filePath = Path.Combine(downloadsPath, fileName);
+                        await File.WriteAllBytesAsync(filePath, pdfBytes).ConfigureAwait(false);
+                        Console.WriteLine($"PDF downloaded successfully to: {filePath}");
                 #else
-                var downloadsPath = Path.Combine("D:/local/", "temp");
+                        // Upload to Azure Blob Storage
+                        var containerClient = new BlobContainerClient("YourConnectionString", "YourContainerName");
+                        await containerClient.CreateIfNotExistsAsync();
+        
+                        var blobClient = containerClient.GetBlobClient(fileName);
+
+                        using var stream = new MemoryStream(pdfBytes);
+                        await blobClient.UploadAsync(stream, overwrite: true);
+                        Console.WriteLine($"PDF uploaded successfully to Azure Blob: {blobClient.Uri}");
                 #endif
 
                 if (!Directory.Exists(downloadsPath))
                 {
                     Directory.CreateDirectory(downloadsPath);
                 }
-
-                var filePath = Path.Combine(downloadsPath, fileName);
-                await File.WriteAllBytesAsync(filePath, pdfBytes).ConfigureAwait(false);
-
-                Console.WriteLine($"PDF downloaded successfully to: {filePath}");
+              
                 documentDownloaded = true;
             }
             catch (Exception ex)

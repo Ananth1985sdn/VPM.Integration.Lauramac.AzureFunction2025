@@ -112,9 +112,10 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             }
         }
 
-        public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(LoanDocumentRequest request)
+        public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(DocumentUploadRequest documentUploadRequest)
         {
             const int MaxRetries = 3;
+            var request = documentUploadRequest.LoanDocumentRequest;
             var finalResults = new List<DocumentUploadResult>();
             var remainingDocs = request.LoanDocuments;
             
@@ -151,7 +152,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 _logger.LogInformation("Sending loan documents to URL: {RequestUrl}", requestUrl);
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
+                _httpClient.DefaultRequestHeaders.Add("Username", documentUploadRequest.UserName);
                 string jsonBody = JsonConvert.SerializeObject(request);
                 var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
@@ -163,8 +164,13 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                     {
                         response = await _httpClient.PostAsync(requestUrl, content);
                     }
-                    catch (HttpRequestException) when (attempt < MaxRetries)
+                    catch (HttpRequestException ex) when (attempt < MaxRetries)
                     {
+                        _logger.LogWarning(ex,
+                        "HttpRequestException on attempt {Attempt}/{MaxRetries} to {RequestUrl}. Retrying after delay...",
+                        attempt,
+                        MaxRetries,
+                        requestUrl);
                         await Task.Delay(GetRetryDelay(attempt));
                         continue;
                     }
@@ -203,7 +209,11 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception in SendLoanDocumentDataAsync");
+                _logger.LogError(ex,
+                    "Exception in SendLoanDocumentDataAsync. SellerName: {SellerName}, TransactionIdentifier: {TransactionIdentifier}, RemainingDocuments: {RemainingDocumentsCount}",
+                    request.SellerName,
+                    request.TransactionIdentifier,
+                    remainingDocs?.Count ?? 0);
             }
 
             return finalResults;
@@ -245,7 +255,11 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Exception in RetrySingleDocumentAsync");
+                    _logger.LogError(ex,
+                     "Exception in RetrySingleDocumentAsync. Document: {Filename}, LoanID: {LoanID}, Attempt: {Attempt}",
+                      document.Filename,
+                      document.LoanID,
+                      attempt);
                 }
 
                 await Task.Delay(GetRetryDelay(attempt));

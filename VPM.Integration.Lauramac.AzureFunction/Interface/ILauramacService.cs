@@ -12,6 +12,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Interface
     {
         Task<string> GetLauramacAccessToken(string username, string password, string fullUrl);
         Task<ImportResponse> SendLoanDataAsync(LoanRequest loanRequest);
-        Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(LoanDocumentRequest loanDocumentRequest);
+        Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(DocumentUploadRequest loanDocumentRequest);
     }
 }
