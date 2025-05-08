@@ -43,7 +43,6 @@ namespace VPM.Integration.Lauramac.AzureFunction
             documentUploadRequest = new DocumentUploadRequest
             {
                 File = "",
-                UserName = "",
                 LoanDocumentRequest = loanDocumentRequest,
             };
         }

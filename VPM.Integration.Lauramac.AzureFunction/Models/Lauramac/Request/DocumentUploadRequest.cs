@@ -11,6 +11,5 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
     {
         public string File { get; set; }
         public LoanDocumentRequest LoanDocumentRequest { get; set; }
-        public string UserName { get; set; }
     }
 }

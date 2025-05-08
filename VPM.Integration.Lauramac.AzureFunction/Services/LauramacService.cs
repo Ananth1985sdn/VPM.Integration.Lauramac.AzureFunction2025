@@ -115,19 +115,19 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(DocumentUploadRequest documentUploadRequest)
         {
             const int MaxRetries = 3;
-            var request = documentUploadRequest.LoanDocumentRequest;
+            var request = documentUploadRequest;
             var finalResults = new List<DocumentUploadResult>();
-            var remainingDocs = request.LoanDocuments;
+            var remainingDocs = request.LoanDocumentRequest.LoanDocuments;
             
-            if (string.IsNullOrEmpty(request.SellerName)) {
+            if (string.IsNullOrEmpty(request.LoanDocumentRequest.SellerName)) {
                 return finalResults;
             }
 
-            request.LoanDocuments = request.LoanDocuments?
+            request.LoanDocumentRequest.LoanDocuments = request.LoanDocumentRequest.LoanDocuments?
                 .Where(doc => !string.IsNullOrWhiteSpace(doc.LoanID) && !string.IsNullOrWhiteSpace(doc.Filename))
                 .ToList() ?? new List<LoanDocument>();
 
-            if (!request.LoanDocuments.Any())
+            if (!request.LoanDocumentRequest.LoanDocuments.Any())
             {
                 _logger.LogWarning("No valid loan documents to process.");
                 return finalResults;
@@ -152,7 +152,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                 _logger.LogInformation("Sending loan documents to URL: {RequestUrl}", requestUrl);
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                _httpClient.DefaultRequestHeaders.Add("Username", documentUploadRequest.UserName);
+                _httpClient.DefaultRequestHeaders.Add("Username", username);
                 string jsonBody = JsonConvert.SerializeObject(request);
                 var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
@@ -196,7 +196,7 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
                         {
                             foreach (var doc in remainingDocs)
                             {
-                                var result = await RetrySingleDocumentAsync(doc, request.SellerName, request.TransactionIdentifier, requestUrl);
+                                var result = await RetrySingleDocumentAsync(doc, request.LoanDocumentRequest.SellerName, request.LoanDocumentRequest.TransactionIdentifier, requestUrl);
                                 finalResults.Add(result);
                             }
 
@@ -211,8 +211,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
             {
                 _logger.LogError(ex,
                     "Exception in SendLoanDocumentDataAsync. SellerName: {SellerName}, TransactionIdentifier: {TransactionIdentifier}, RemainingDocuments: {RemainingDocumentsCount}",
-                    request.SellerName,
-                    request.TransactionIdentifier,
+                    request.LoanDocumentRequest.SellerName,
+                    request.LoanDocumentRequest.TransactionIdentifier,
                     remainingDocs?.Count ?? 0);
             }
 
