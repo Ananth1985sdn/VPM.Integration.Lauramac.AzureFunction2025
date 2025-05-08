@@ -22,7 +22,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
         private readonly ILoanDataService _loanDataService;
         private readonly ILauramacService _lauramacService;
         private LoanRequest loanRequest;
-        private LoanDocumentRequest loanDoumentRequest;
+        private LoanDocumentRequest loanDocumentRequest;
         private DocumentUploadRequest documentUploadRequest;
         public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService, ILauramacService lauramacService)
         {
@@ -35,7 +35,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 TransactionIdentifier = "",
                 OverrideDuplicateLoans = "0"
             };
-            loanDoumentRequest = new LoanDocumentRequest
+            loanDocumentRequest = new LoanDocumentRequest
             {
                 LoanDocuments = new List<LoanDocument>(),
                 TransactionIdentifier = "",
@@ -44,7 +44,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             {
                 File = "",
                 UserName = "",
-                LoanDocumentRequest = loanDoumentRequest,
+                LoanDocumentRequest = loanDocumentRequest,
             };
         }
 
