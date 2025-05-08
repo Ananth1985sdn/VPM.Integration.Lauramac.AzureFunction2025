@@ -34,6 +34,6 @@
     "EmailSettings:Password": "smtp_password",
     "EmailSettings:EnableSsl": "true",
     "AzureDocumentPath": "D/local/temp/",
-    "SellerName": "Clarifii"
+    "SellerName": "Clarifii" //Canopy
   }
 }
