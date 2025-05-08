@@ -21,8 +21,8 @@ namespace VPM.Integration.Lauramac.AzureFunction
         private readonly ILauramacService _lauramacService;
         private LoanRequest loanRequest;
         private LoanRequest secondLienLoanRequest;
-        private LoanDocumentRequest loanDoumentRequest;
-        private LoanDocumentRequest secondLienLoanDoumentRequest;
+        private LoanDocumentRequest loanDocumentRequest;
+        private LoanDocumentRequest secondLienLoanDocumentRequest;
 
         public LauramacAzureFunction(ILoggerFactory loggerFactory, ILoanDataService loanDataService, ILauramacService lauramacService)
         {
@@ -35,7 +35,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 TransactionIdentifier = "",
                 OverrideDuplicateLoans = "0"
             };                
-            loanDoumentRequest = new LoanDocumentRequest
+            loanDocumentRequest = new LoanDocumentRequest
             {
                 LoanDocuments = new List<LoanDocument>(),
                 TransactionIdentifier = "",
@@ -46,7 +46,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 TransactionIdentifier = "",
                 OverrideDuplicateLoans = "0"
             };
-            secondLienLoanDoumentRequest = new LoanDocumentRequest
+            secondLienLoanDocumentRequest = new LoanDocumentRequest
             {
                 LoanDocuments = new List<LoanDocument>(),
                 TransactionIdentifier = "",
@@ -74,15 +74,15 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 switch (sellerName)
                 {
                     case "Canopy":
-                        await ProcessLoanSetAsync(loanRequest, loanDoumentRequest, "Canopy");
+                        await ProcessLoanSetAsync(loanRequest, loanDocumentRequest, "Canopy");
                         break;
 
                     case "Clarifii":
-                        await ProcessLoanSetAsync(loanRequest, loanDoumentRequest, "Clarifii First Lie");
+                        await ProcessLoanSetAsync(loanRequest, loanDocumentRequest, "Clarifii First Lie");
 
                         if (secondLienLoanRequest?.Loans?.Count > 0)
                         {
-                            await ProcessLoanSetAsync(secondLienLoanRequest, secondLienLoanDoumentRequest, "Clarifii Second Lie");
+                            await ProcessLoanSetAsync(secondLienLoanRequest, secondLienLoanDocumentRequest, "Clarifii Second Lie");
                         }
                         else
                         {
@@ -279,7 +279,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
         private void SetTransactionIds(string transactionId)
         {
             loanRequest.TransactionIdentifier = transactionId;
-            loanDoumentRequest.TransactionIdentifier = transactionId;
+            loanDocumentRequest.TransactionIdentifier = transactionId;
         }
 
         private Models.Lauramac.Request.Loan MapToLauramacLoan(EncompassLoan loan)
@@ -329,29 +329,29 @@ namespace VPM.Integration.Lauramac.AzureFunction
                 if (lien == "First Lie")
                 {
                     loanRequest.Loans.Add(loan);
-                    loanDoumentRequest.LoanDocuments.Add(doc);
+                    loanDocumentRequest.LoanDocuments.Add(doc);
                 }
                 else if (lien == "Second Lie")
                 {
                     secondLienLoanRequest.Loans.Add(loan);
-                    secondLienLoanDoumentRequest.LoanDocuments.Add(doc);
+                    secondLienLoanDocumentRequest.LoanDocuments.Add(doc);
                 }
             }
             else
             {
                 loanRequest.Loans.Add(loan);
-                loanDoumentRequest.LoanDocuments.Add(doc);
+                loanDocumentRequest.LoanDocuments.Add(doc);
             }
         }
 
         private void SetSellerNames(string seller)
         {
             loanRequest.SellerName = seller;
-            loanDoumentRequest.SellerName = seller;
+            loanDocumentRequest.SellerName = seller;
             if (seller == "Clarifii")
             {
                 secondLienLoanRequest.SellerName = seller;
-                secondLienLoanDoumentRequest.SellerName = seller;
+                secondLienLoanDocumentRequest.SellerName = seller;
             }
         }
 
