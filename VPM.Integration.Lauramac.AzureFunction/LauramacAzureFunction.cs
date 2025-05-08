@@ -256,7 +256,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             documentUploadRequest.LoanDocumentRequest.LoanDocuments.Add(new LoanDocument
             {
                 LoanID = loan.LoanId,
-                Filename = $"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                Filename = $"{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
                 isExternalDocument = false
             });
         }
