@@ -43,6 +43,9 @@
     <None Update="TestData\Response\LauramacImportLoanDocumentsResponseLoadIdIsNull.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\Response\LauramacImportLoanDocumentsFailureResponse.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\Response\LauramacImportLoanDocumentsSuccessResponse.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

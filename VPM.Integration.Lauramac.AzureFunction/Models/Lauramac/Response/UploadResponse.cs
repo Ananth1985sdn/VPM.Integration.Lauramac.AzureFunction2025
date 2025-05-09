@@ -8,7 +8,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Response
 {
     public class UploadResponse
     {
-        public string Status { get; set; } 
         public List<DocumentUploadResult> Results { get; set; }
     }
 }

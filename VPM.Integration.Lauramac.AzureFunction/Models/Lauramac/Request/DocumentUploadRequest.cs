@@ -9,7 +9,6 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
 {
     public class DocumentUploadRequest
     {
-        public string File { get; set; }
-        public LoanDocumentRequest LoanDocumentRequest { get; set; }
+        public List<LoanDocumentRequest> LoanDocumentRequest { get; set; }
     }
 }

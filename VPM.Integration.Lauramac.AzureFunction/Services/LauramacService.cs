@@ -23,7 +23,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         {
             try
             {
-                if(string.IsNullOrEmpty(loanRequest.SellerName)) {
+                if (string.IsNullOrEmpty(loanRequest.SellerName))
+                {
                     return new ImportResponse { Status = "SellerName is required." };
                 }
 
@@ -115,164 +116,103 @@ namespace VPM.Integration.Lauramac.AzureFunction.Services
         public async Task<List<DocumentUploadResult>> SendLoanDocumentDataAsync(DocumentUploadRequest documentUploadRequest)
         {
             const int MaxRetries = 3;
-            var request = documentUploadRequest;
             var finalResults = new List<DocumentUploadResult>();
-            var remainingDocs = request.LoanDocumentRequest.LoanDocuments;
-            
-            if (string.IsNullOrEmpty(request.LoanDocumentRequest.SellerName)) {
-                return finalResults;
-            }
 
-            request.LoanDocumentRequest.LoanDocuments = request.LoanDocumentRequest.LoanDocuments?
-                .Where(doc => !string.IsNullOrWhiteSpace(doc.LoanID) && !string.IsNullOrWhiteSpace(doc.Filename))
-                .ToList() ?? new List<LoanDocument>();
-
-            if (!request.LoanDocumentRequest.LoanDocuments.Any())
+            if (documentUploadRequest.LoanDocumentRequest == null || !documentUploadRequest.LoanDocumentRequest.Any())
             {
-                _logger.LogWarning("No valid loan documents to process.");
+                _logger.LogError("SendLoanDocumentDataAsync: No loan documents to process.");
                 return finalResults;
             }
+
             try
             {
-
                 string username = Environment.GetEnvironmentVariable("LauraMacUsername");
                 string password = Environment.GetEnvironmentVariable("LauraMacPassword");
                 string baseUrl = Environment.GetEnvironmentVariable("LauraMacApiBaseURL");
                 string tokenUrl = Environment.GetEnvironmentVariable("LauraMacTokenURL");
+                string importUrl = Environment.GetEnvironmentVariable("LauraMacImportLoanDocumentsUrl");
 
+                string requestUrl = $"{baseUrl}{importUrl}";
                 string fullTokenUrl = $"{baseUrl}{tokenUrl}";
+
+                _logger.LogInformation("SendLoanDocumentDataAsync: Requesting access token.");
                 string accessToken = await GetLauramacAccessToken(username, password, fullTokenUrl);
 
                 if (string.IsNullOrWhiteSpace(accessToken) || accessToken.Contains("Error") || accessToken.Contains("Exception"))
-                    return finalResults;
-
-                string importUrl = Environment.GetEnvironmentVariable("LauraMacImportLoanDocumentsUrl");
-                string requestUrl = $"{baseUrl}{importUrl}";
-
-                _logger.LogInformation("Sending loan documents to URL: {RequestUrl}", requestUrl);
-
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                _httpClient.DefaultRequestHeaders.Add("Username", username);
-                string jsonBody = JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-
-                for (int attempt = 1; attempt <= MaxRetries && remainingDocs.Count > 0; attempt++)
                 {
-                    HttpResponseMessage response = null;
+                    _logger.LogError("SendLoanDocumentDataAsync: Failed to retrieve a valid access token.");
+                    return finalResults;
+                }
+
+                foreach (var loanDocumentRequest in documentUploadRequest.LoanDocumentRequest)
+                {
+                    string loanId = loanDocumentRequest?.LoanDocuments?.FirstOrDefault()?.LoanID ?? "Unknown";
+                    string fileName = loanDocumentRequest?.LoanDocuments?.FirstOrDefault()?.Filename ?? "Unknown";
 
                     try
                     {
-                        response = await _httpClient.PostAsync(requestUrl, content);
-                    }
-                    catch (HttpRequestException ex) when (attempt < MaxRetries)
-                    {
-                        _logger.LogWarning(ex,
-                        "HttpRequestException on attempt {Attempt}/{MaxRetries} to {RequestUrl}. Retrying after delay...",
-                        attempt,
-                        MaxRetries,
-                        requestUrl);
-                        await Task.Delay(GetRetryDelay(attempt));
-                        continue;
-                    }
+                        _logger.LogInformation("SendLoanDocumentDataAsync: Sending loan documents for LoanID: {LoanId}, FileName: {FileName} to URL: {Url}",
+                            loanId, fileName, requestUrl);
 
-                    if (response != null)
-                    {
-                        var responseContent = await response.Content.ReadAsStringAsync();
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                        _httpClient.DefaultRequestHeaders.Remove("Username");
+                        _httpClient.DefaultRequestHeaders.Add("Username", username);
 
-                        if (response.IsSuccessStatusCode)
+                        string jsonBody = JsonConvert.SerializeObject(loanDocumentRequest);
+                        var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+                        for (int attempt = 1; attempt <= MaxRetries; attempt++)
                         {
-                            var uploadResponse = JsonConvert.DeserializeObject<UploadResponse>(responseContent);
-                            finalResults.AddRange(uploadResponse.Results);
-
-                            remainingDocs = remainingDocs
-                                .Where(doc =>
-                                {
-                                    var loanId = ((dynamic)doc).LoanID;
-                                    return uploadResponse.Results.Any(r => r.LoanID == loanId && r.Status == "failure");
-                                })
-                                .ToList();
-                        }
-                        else if (attempt == MaxRetries)
-                        {
-                            foreach (var doc in remainingDocs)
+                            try
                             {
-                                var result = await RetrySingleDocumentAsync(doc, request.LoanDocumentRequest.SellerName, request.LoanDocumentRequest.TransactionIdentifier, requestUrl);
-                                finalResults.Add(result);
+                                var response = await _httpClient.PostAsync(requestUrl, content);
+                                var responseContent = await response.Content.ReadAsStringAsync();
+
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    var uploadResponse = JsonConvert.DeserializeObject<List<DocumentUploadResult>>(responseContent);
+                                    if (uploadResponse != null)
+                                    {
+                                        finalResults.AddRange(uploadResponse);
+                                        _logger.LogInformation("SendLoanDocumentDataAsync: Upload successful for LoanID: {LoanId}, FileName: {FileName}.", loanId, fileName);
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("SendLoanDocumentDataAsync: Upload failed for LoanID: {LoanId}, FileName: {FileName}. Response: {Response}",
+                                        loanId, fileName, responseContent);
+
+                                    var errorResponse = JsonConvert.DeserializeObject<List<DocumentUploadResult>>(responseContent);
+                                    if (errorResponse != null)
+                                    {
+                                        finalResults.AddRange(errorResponse);
+                                    }
+                                    break;
+                                }
                             }
-
-                            break;
+                            catch (Exception ex) when (attempt < MaxRetries)
+                            {
+                                _logger.LogWarning(ex, "SendLoanDocumentDataAsync: Attempt {Attempt}/{MaxRetries} failed for LoanID: {LoanId}, FileName: {FileName}. Retrying...",
+                                    attempt, MaxRetries, loanId, fileName);
+                                await Task.Delay(GetRetryDelay(attempt));
+                            }
                         }
-
-                        await Task.Delay(GetRetryDelay(attempt));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "SendLoanDocumentDataAsync: Exception while processing LoanID: {LoanId}, FileName: {FileName}", loanId, fileName);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "Exception in SendLoanDocumentDataAsync. SellerName: {SellerName}, TransactionIdentifier: {TransactionIdentifier}, RemainingDocuments: {RemainingDocumentsCount}",
-                    request.LoanDocumentRequest.SellerName,
-                    request.LoanDocumentRequest.TransactionIdentifier,
-                    remainingDocs?.Count ?? 0);
+                _logger.LogError(ex, "SendLoanDocumentDataAsync: Unexpected error.");
             }
 
+            _logger.LogInformation("SendLoanDocumentDataAsync: Completed with {Count} results.", finalResults.Count);
             return finalResults;
         }
-
-        private async Task<DocumentUploadResult> RetrySingleDocumentAsync(
-            LoanDocument document,
-            string sellerName,
-            string transactionIdentifier,
-            string requestUrl)
-        {
-            const int MaxRetries = 3;
-
-            for (int attempt = 1; attempt <= MaxRetries; attempt++)
-            {
-                var payload = new
-                {
-                    LoanDocuments = new List<LoanDocument> { document },
-                    SellerName = sellerName,
-                    TransactionIdentifier = transactionIdentifier
-                };
-
-                var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
-                {
-                    Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json")
-                };
-
-                try
-                {
-                    var response = await _httpClient.SendAsync(request);
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = JsonConvert.DeserializeObject<UploadResponse>(responseContent)?.Results?.FirstOrDefault();
-                        if (result != null)
-                            return result;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex,
-                     "Exception in RetrySingleDocumentAsync. Document: {Filename}, LoanID: {LoanID}, Attempt: {Attempt}",
-                      document.Filename,
-                      document.LoanID,
-                      attempt);
-                }
-
-                await Task.Delay(GetRetryDelay(attempt));
-            }
-
-            return new DocumentUploadResult
-            {
-                LoanID = ((dynamic)document).LoanID,
-                Status = "failure",
-                ImportMessage = "Retry failed after max attempts"
-            };
-        }
-
         private int GetRetryDelay(int attempt)
         {
             return (int)(Math.Pow(2, attempt) * 500 + new Random().Next(100));

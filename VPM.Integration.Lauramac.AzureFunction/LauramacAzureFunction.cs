@@ -42,8 +42,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             };
             documentUploadRequest = new DocumentUploadRequest
             {
-                File = "",
-                LoanDocumentRequest = loanDocumentRequest,
+                LoanDocumentRequest = new List<LoanDocumentRequest>(),
             };
         }
 
@@ -71,7 +70,20 @@ namespace VPM.Integration.Lauramac.AzureFunction
                         {
                             _logger.LogInformation("Loan data sent successfully.");
                             var documentResponse = await _lauramacService.SendLoanDocumentDataAsync(documentUploadRequest);
-                            _logger.LogInformation("Lauramac Document Response: {Response}", documentResponse);
+                            if (documentResponse != null && documentResponse.Any())
+                            {
+                                _logger.LogInformation("Lauramac returned {Count} document upload results.", documentResponse.Count);
+
+                                foreach (var result in documentResponse)
+                                {
+                                    _logger.LogInformation("Document Upload Result - LoanID: {LoanId}, FileName: {FileName}, Status: {Status}, Message: {Message}",
+                                        result.LoanID, result.filename, result.Status, result.ImportMessage);
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Lauramac document response was empty or null.");
+                            }
                         }
                         else
                         {
@@ -139,7 +151,6 @@ namespace VPM.Integration.Lauramac.AzureFunction
             string transactionIdentifier = canopyTransactionIdentifier.Replace("{transactionId}", transactionId);
 
             loanRequest.TransactionIdentifier = transactionIdentifier;
-            documentUploadRequest.LoanDocumentRequest.TransactionIdentifier = transactionIdentifier;
 
             foreach (var loan in loans ?? Enumerable.Empty<EncompassLoan>())
             {
@@ -183,7 +194,7 @@ namespace VPM.Integration.Lauramac.AzureFunction
             }
 
             loanRequest.SellerName = sellerName;
-            documentUploadRequest.LoanDocumentRequest.SellerName = sellerName;
+            //documentUploadRequest.LoanDocumentRequest.SellerName = sellerName;
         }
 
         private bool IsValidResponse(string response, out JToken parsed)
@@ -249,15 +260,26 @@ namespace VPM.Integration.Lauramac.AzureFunction
             //using var memoryStream = new MemoryStream();
             //blobClient.DownloadToAsync(memoryStream);
             //byte[] fileBytes = memoryStream.ToArray();
-            //documentUploadRequest.File = Convert.ToBase64String(fileBytes);
             byte[] fileBytes = File.ReadAllBytes($"{azureDocumentPath}{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf");
-            documentUploadRequest.File = Convert.ToBase64String(fileBytes);
+           
 
-            documentUploadRequest.LoanDocumentRequest.LoanDocuments.Add(new LoanDocument
+            documentUploadRequest.LoanDocumentRequest.Add(new LoanDocumentRequest
             {
-                LoanID = loan.LoanId,
-                Filename = $"{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
-                isExternalDocument = false
+                File = Convert.ToBase64String(fileBytes),
+                LoanDocuments = new List<LoanDocument>
+                {
+                    new LoanDocument
+                    {
+                        LoanID = loan.LoanId,
+                        Filename = $"{loan.LoanId}_{loan.Fields.Field4002}_shippingfiles.pdf",
+                        isExternalDocument = false,
+                        ExternalDocumentLink = null,
+                        ExternalFileId = null,
+                        ExternalRequestId = null
+                    }
+                },
+                TransactionIdentifier = loanRequest.TransactionIdentifier,
+                SellerName = loanRequest.SellerName
             });
         }
 

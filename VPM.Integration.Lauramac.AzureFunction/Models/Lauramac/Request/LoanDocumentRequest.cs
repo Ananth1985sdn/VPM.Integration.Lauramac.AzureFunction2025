@@ -9,6 +9,8 @@ namespace VPM.Integration.Lauramac.AzureFunction.Models.Lauramac.Request
 {
     public class LoanDocumentRequest
     {
+        public string File { get; set; }
+
         [JsonProperty("LoanDocuments")]
         public List<LoanDocument> LoanDocuments { get; set; }
 
